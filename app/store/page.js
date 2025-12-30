@@ -1,82 +1,148 @@
 // app/store/page.js
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 
-// Mock data — replace with Supabase fetch in production
-const products = [
-  {
-    name: "XE – Everybody’s Oil",
-    tier: "entry",
-    sizes: [
-      { label: "Roller", usd: 38, xec: 67 },
-      { label: "3 oz", usd: 38, xec: 67 }
-    ],
-    description: "Universal wellness elixir. Accessible to all."
-  },
-  {
-    name: "The Queen’s Oil",
-    tier: "signature",
-    sizes: [
-      { label: "Roller", usd: 38, xec: 67 },
-      { label: "3 oz", usd: 58, xec: 103 },
-      { label: "8 oz", usd: 98, xec: 173 }
-    ],
-    description: "Geranium-based. Anti-aging, hormone balance, vibrant skin."
-  },
-  {
-    name: "The Unbroken Ointment",
-    tier: "premium",
-    sizes: [
-      { label: "Roller", usd: 58, xec: 103 },
-      { label: "3 oz", usd: 88, xec: 156 },
-      { label: "8 oz", usd: 168, xec: 297 }
-    ],
-    description: "For bodies that carry invisible battles. Ceremonial oil for pain and remembrance."
-  }
-  // Add all 13 products in production
-];
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+// Map slugs to blend names for grouping
+const BLEND_NAMES = {
+  'xe': 'XE – Everybody’s Oil',
+  'queen': 'The Queen’s Oil',
+  'king': 'The King’s Oil',
+  'blood-type-a': 'Blood Type A Blend',
+  'menopause': 'Menopause Blend',
+  'metabolism': 'Metabolism Boost Elixir',
+  'headache': 'Serene Relief Headache Therapy',
+  'opioid': 'Opioid Recovery Blend',
+  'joint': 'Joint Ease Relief Elixir',
+  'glucose': 'Glucose Balance Circulation Therapy',
+  'unbroken': 'The Unbroken Ointment',
+  'sciatic': 'Deep Relief Sciatic Soother',
+  'shoulder': 'Shoulder Freedom Floral Therapy',
+  'telomere': 'Telomere Repair Serum'
+};
+
+// Map tier to color
+const TIER_COLORS = {
+  entry: 'bg-gray-700',
+  signature: 'bg-slate-700',
+  premium: 'bg-purple-900/50',
+  ultra_premium: 'bg-emerald-900/30'
+};
+
+// Get slug from name
+const getSlug = (name) => {
+  const entry = Object.entries(BLEND_NAMES).find(([, n]) => n === name);
+  return entry ? entry[0] : name.toLowerCase().replace(/\s+/g, '-');
+};
 
 export default function StorePage() {
-  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [productsByBlend, setProductsByBlend] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('size_oz', { ascending: true });
+
+        if (error) throw error;
+
+        // Group by blend name
+        const grouped = {};
+        data.forEach(product => {
+          const blendKey = product.slug.split('-')[0]; // e.g., 'unbroken' from 'unbroken-3oz'
+          const blendName = Object.values(BLEND_NAMES).find(name => 
+            name.toLowerCase().includes(blendKey.replace(/-/g, ' '))
+          ) || BLEND_NAMES[blendKey] || product.name;
+
+          if (!grouped[blendName]) {
+            grouped[blendName] = {
+              name: blendName,
+              slug: getSlug(blendName),
+              tier: product.tier,
+              sizes: []
+            };
+          }
+          grouped[blendName].sizes.push(product);
+        });
+
+        setProductsByBlend(grouped);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-white py-16 px-6">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold mb-12 text-center">The Apothecary</h1>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {products.map((product, i) => (
-            <div key={i} className="border border-gray-800 rounded-xl p-6 hover:border-turquoise transition">
-              <h2 className="text-xl font-bold mb-2">{product.name}</h2>
-              <p className="text-gray-400 text-sm mb-4">{product.description}</p>
-              
-              <div className="space-y-3">
-                {product.sizes.map((size, j) => (
-                  <div key={j} className="flex justify-between items-center py-2 border-b border-gray-800">
-                    <span className="text-sm">{size.label}</span>
-                    <div>
-                      <span className="text-gray-400">${size.usd} • </span>
-                      <span className="text-turquoise">{size.xec} XEC</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-4 flex gap-2">
-                <Link
-                  href={`/blend?blend=${product.name.toLowerCase().replace(/\s+/g, '-')}`}
-                  className="text-turquoise hover:underline text-sm"
-                >
-                  View Details →
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl md:text-4xl font-bold text-center mb-16">The Apothecary</h1>
 
-        <div className="mt-16 text-center text-gray-500 text-sm">
+        {loading ? (
+          <div className="text-center text-gray-500">Loading products...</div>
+        ) : (
+          <div className="space-y-16">
+            {Object.values(productsByBlend).map((blend, i) => (
+              <div key={i} className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                {/* Product Image */}
+                <div className="flex justify-center">
+                  <div className="bg-gray-900 p-8 rounded-2xl border border-gray-800 w-full max-w-md">
+                    <img 
+                      src={`/gallery/${blend.slug}.jpg`} 
+                      alt={blend.name}
+                      className="w-full h-96 object-cover rounded-xl"
+                      onError={(e) => e.currentTarget.src = '/gallery/xe.jpg'}
+                    />
+                  </div>
+                </div>
+
+                {/* Product Info */}
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${TIER_COLORS[blend.tier]}`}>
+                      {blend.tier.replace('_', ' ').toUpperCase()}
+                    </span>
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-bold mb-4">{blend.name}</h2>
+                  
+                  <div className="space-y-3 mb-6">
+                    {blend.sizes.map((size, idx) => (
+                      <div key={idx} className="flex justify-between items-center py-2 border-b border-gray-800">
+                        <span className="text-sm">{size.size_label}</span>
+                        <div>
+                          <span className="text-gray-400">${size.usd_price} • </span>
+                          <span className="text-turquoise">{size.xec_amount} XEC</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <Link
+                    href={`/blend?blend=${blend.slug}`}
+                    className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-6 rounded-full font-medium transition"
+                  >
+                    Unlock Blend →
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-20 text-center text-gray-500 text-sm">
           <p>All blends are formulated with cellular wellness in mind.</p>
           <p className="mt-1">Not a treatment. Complementary support only. Consult your healthcare provider.</p>
         </div>
