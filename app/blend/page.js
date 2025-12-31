@@ -1,4 +1,6 @@
 // app/blend/page.js
+export const dynamic = 'force-dynamic';
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -15,15 +17,17 @@ export default function BlendAccessPage() {
   const products = {
     'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156 },
     'xe': { name: 'XE – Everybody’s Oil', price: 38, xec: 67 }
+    // add others as needed
   };
 
   const product = products[blendSlug] || products['xe'];
 
   useEffect(() => {
-    setTimeout(() => {
+    const timer = setTimeout(() => {
       setHasAccess(false);
       setChecking(false);
     }, 500);
+    return () => clearTimeout(timer);
   }, [blendSlug]);
 
   if (checking) {
