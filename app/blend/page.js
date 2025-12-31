@@ -1,4 +1,6 @@
 // app/blend/page.js
+export const dynamic = 'force-client'; // ← Critical fix: prevents prerender error
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,17 +14,27 @@ export default function BlendAccessPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [checking, setChecking] = useState(true);
 
+  // Mock product data — in production, you can fetch from Supabase
   const products = {
     'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156 },
     'menopause': { name: 'Menopause Blend', price: 58, xec: 103 },
     'sciatic': { name: 'Deep Relief Sciatic Soother', price: 88, xec: 156 },
     'telomere': { name: 'Telomere Repair Serum', price: 168, xec: 297 },
     'queen': { name: 'Queen’s Oil', price: 58, xec: 103 },
-    'xe': { name: 'XE – Everybody’s Oil', price: 38, xec: 67 }
+    'xe': { name: 'XE – Everybody’s Oil', price: 38, xec: 67 },
+    'king': { name: 'The King’s Oil', price: 58, xec: 103 },
+    'blood-type-a': { name: 'Blood Type A Blend', price: 58, xec: 103 },
+    'metabolism': { name: 'Metabolism Boost Elixir', price: 58, xec: 103 },
+    'headache': { name: 'Serene Relief Headache Therapy', price: 78, xec: 138 },
+    'opioid': { name: 'Opioid Recovery Blend', price: 78, xec: 138 },
+    'joint': { name: 'Joint Ease Relief Elixir', price: 78, xec: 138 },
+    'glucose': { name: 'Glucose Balance Circulation Therapy', price: 78, xec: 138 },
+    'shoulder': { name: 'Shoulder Freedom Floral Therapy', price: 88, xec: 156 }
   };
 
   const product = products[blendSlug] || products['xe'];
 
+  // Simulate access check (no real check in demo)
   useEffect(() => {
     setHasAccess(false);
     setChecking(false);
@@ -46,7 +58,7 @@ export default function BlendAccessPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* ✅ Blend Banner — identical to /about-xec */}
+      {/* Unified Banner — matches /about-xec */}
       <div 
         className="relative h-80 flex items-center justify-center"
         style={{
@@ -96,6 +108,7 @@ export default function BlendAccessPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center">Unlock With</h2>
           
+          {/* XEC Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
             <h3 className="text-xl font-bold mb-4 text-turquoise">Pay with $XEC (Recommended)</h3>
             <p className="text-gray-400 mb-4">
@@ -109,11 +122,13 @@ export default function BlendAccessPage() {
             </Link>
           </div>
 
+          {/* PayPal Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800">
             <h3 className="text-xl font-bold mb-4">Or Pay with Card</h3>
             <p className="text-gray-400 mb-4">
               Use PayPal for secure checkout. Ships in 3–5 days.
             </p>
+            {/* Fixed PayPal Button */}
             <form 
               action="https://www.paypal.com/cgi-bin/webscr" 
               method="post" 
