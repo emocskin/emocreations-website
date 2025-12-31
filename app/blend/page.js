@@ -12,7 +12,6 @@ export default function BlendAccessPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // Product data — includes all 13 blends
   const products = {
     'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156 },
     'menopause': { name: 'Menopause Blend', price: 58, xec: 103 },
@@ -33,7 +32,6 @@ export default function BlendAccessPage() {
   const product = products[blendSlug] || products['xe'];
 
   useEffect(() => {
-    // Simulate access check (always false in demo)
     const timer = setTimeout(() => {
       setHasAccess(false);
       setChecking(false);
