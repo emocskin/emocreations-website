@@ -6,7 +6,7 @@ import Link from 'next/link';
 export default function GetStartedPage() {
   return (
     <div className="font-sans bg-black text-white min-h-screen">
-      {/* Hero Banner */}
+      {/* ✅ Universal Banner — identical to /about-xec */}
       <div 
         className="relative h-80 flex items-center justify-center"
         style={{
@@ -36,8 +36,6 @@ export default function GetStartedPage() {
 
       {/* Steps */}
       <section className="py-12 px-6 max-w-4xl mx-auto space-y-12">
-        
-        {/* Step 1 */}
         <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
           <h2 className="text-2xl font-bold mb-4 flex items-center">
             <span className="bg-turquoise text-black w-8 h-8 rounded-full flex items-center justify-center mr-3">1</span>
@@ -58,7 +56,6 @@ export default function GetStartedPage() {
           </p>
         </div>
 
-        {/* Step 2 */}
         <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
           <h2 className="text-2xl font-bold mb-4 flex items-center">
             <span className="bg-turquoise text-black w-8 h-8 rounded-full flex items-center justify-center mr-3">2</span>
@@ -77,7 +74,6 @@ export default function GetStartedPage() {
           </p>
         </div>
 
-        {/* Step 3 */}
         <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
           <h2 className="text-2xl font-bold mb-4 flex items-center">
             <span className="bg-turquoise text-black w-8 h-8 rounded-full flex items-center justify-center mr-3">3</span>
@@ -98,7 +94,6 @@ export default function GetStartedPage() {
           </p>
         </div>
 
-        {/* Step 4 */}
         <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
           <h2 className="text-2xl font-bold mb-4 flex items-center">
             <span className="bg-turquoise text-black w-8 h-8 rounded-full flex items-center justify-center mr-3">4</span>
@@ -116,7 +111,6 @@ export default function GetStartedPage() {
           </p>
         </div>
 
-        {/* Step 5 */}
         <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
           <h2 className="text-2xl font-bold mb-4 flex items-center">
             <span className="bg-turquoise text-black w-8 h-8 rounded-full flex items-center justify-center mr-3">5</span>

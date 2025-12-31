@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 export default function HomePage() {
@@ -10,7 +10,6 @@ export default function HomePage() {
   const [trendingBlends, setTrendingBlends] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch live trending data
   useEffect(() => {
     const fetchTrending = async () => {
       try {
@@ -40,48 +39,30 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="font-sans bg-black text-white min-h-screen relative">
-      {/* ✅ Optimized Hero Background — fits top banner perfectly */}
+    <div className="font-sans bg-black text-white min-h-screen">
+      {/* ✅ Homepage Banner — identical to /about-xec */}
       <div 
-        className="absolute inset-0 bg-black z-0"
+        className="relative h-96 md:h-[500px] flex items-center justify-center"
         style={{
-          backgroundImage: `url('/hero-image.jpg')`,
+          backgroundImage: `url('/about-xec-banner.jpg')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center top', // 👈 Ensures storefront sign is visible
+          backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }}
       >
         <div className="absolute inset-0 bg-black/70"></div>
+        <div className="relative z-10 text-center px-4">
+          <h1 className="text-3xl md:text-5xl font-bold mb-6">Your skin deserves more than guesswork.</h1>
+          <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">
+            At EmoCreations.skin, our AI doesn’t just blend oils—<br />
+            <span className="text-turquoise">it studies the science of synergy</span> to create intelligent, evidence-informed elixirs that honor your skin’s innate intelligence.
+          </p>
+        </div>
       </div>
 
-      {/* Hero Content */}
-      <header className="relative z-10 py-20 md:py-28 px-6 text-center max-w-4xl mx-auto">
-        <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-          Your skin deserves more than guesswork.
-        </h1>
-        <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-10">
-          At EmoCreations.skin, our AI doesn’t just blend oils—<br />
-          <span className="text-turquoise">it studies the science of synergy</span> to create intelligent, evidence-informed elixirs that honor your skin’s innate intelligence.
-        </p>
-        <div className="flex flex-wrap justify-center gap-4">
-          <Link
-            href="/blend"
-            className="bg-turquoise hover:bg-teal-400 text-black py-3 px-8 rounded-full font-medium transition font-bold"
-          >
-            Create Your Blend
-          </Link>
-          <Link
-            href="/store"
-            className="border border-turquoise text-turquoise hover:bg-turquoise/10 py-3 px-8 rounded-full font-medium transition"
-          >
-            Shop Oils
-          </Link>
-        </div>
-      </header>
-
       {/* Problem → Solution */}
-      <section className="relative z-10 py-16 px-6 bg-black">
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div>
             <h2 className="text-3xl font-bold mb-4">The Pain You Feel</h2>
             <p className="text-gray-400 mb-6">
@@ -103,8 +84,18 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* ✅ MOVED: Core Paths cards — now ABOVE gallery */}
+      <section className="py-16 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <PathCard title="AI Blending App" description="Personalized, synergistic blends—crafted by AI, rooted in peer-reviewed science." href="/blend" />
+          <PathCard title="The Apothecary" description="The Queen’s Oil, The King’s Oil, and XE—Everybody’s Oil. Bottled with intention." href="/store" />
+          <PathCard title="Get $XEC" description="Swap XRP for XEC on XP Market. Rate: 0.26 XRP per XEC. No KYC." external href="https://xpmarket.com/amm/pool/XEC-rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX/XRP" />
+          <PathCard title="About $XEC" description="The utility token that unlocks science-backed wellness and exclusive access." href="/about-xec" />
+        </div>
+      </section>
+
       {/* Gallery */}
-      <section className="relative z-10 py-16 px-6 bg-black">
+      <section className="py-16 px-6 bg-black">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">The Apothecary Collection</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -132,7 +123,7 @@ export default function HomePage() {
       </section>
 
       {/* Trending Blends */}
-      <section className="relative z-10 py-16 px-6 bg-black">
+      <section className="py-16 px-6 bg-black">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Trending Blends</h2>
           {loading ? (
@@ -157,7 +148,7 @@ export default function HomePage() {
                 ))
               ) : (
                 <div className="col-span-4 text-center text-gray-500">
-                  No trending blends yet. Create the first one!
+                  No trending blends yet.
                 </div>
               )}
             </div>
@@ -165,18 +156,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Core Paths */}
-      <section className="relative z-10 py-16 px-6 max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <PathCard title="AI Blending App" description="Personalized, synergistic blends—crafted by AI, rooted in peer-reviewed science." href="/blend" />
-          <PathCard title="The Apothecary" description="The Queen’s Oil, The King’s Oil, and XE—Everybody’s Oil. Bottled with intention." href="/store" />
-          <PathCard title="Get $XEC" description="Swap XRP for XEC on XP Market. Rate: 0.26 XRP per XEC. No KYC." external href="https://xpmarket.com/amm/pool/XEC-rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX/XRP" />
-          <PathCard title="About $XEC" description="The utility token that unlocks science-backed wellness and exclusive access." href="/about-xec" />
-        </div>
-      </section>
-
       {/* XEC Gate */}
-      <section className="relative z-10 py-16 px-6 border-t border-gray-800">
+      <section className="py-16 px-6 border-t border-gray-800">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-2xl font-bold mb-6 text-turquoise">
             Hold $25+ of XEC. Unlock intelligent wellness.
@@ -188,7 +169,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-10 px-6 text-center text-gray-500 text-sm border-t border-gray-800">
+      <footer className="py-10 px-6 text-center text-gray-500 text-sm border-t border-gray-800">
         <p className="mb-4">
           Follow the science: 
           <a href="https://instagram.com/emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a> • 
