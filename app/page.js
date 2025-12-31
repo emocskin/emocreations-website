@@ -41,13 +41,13 @@ export default function HomePage() {
 
   return (
     <div className="font-sans bg-black text-white min-h-screen relative">
-      {/* Hero Background */}
+      {/* ✅ Optimized Hero Background — fits top banner perfectly */}
       <div 
         className="absolute inset-0 bg-black z-0"
         style={{
           backgroundImage: `url('/hero-image.jpg')`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundPosition: 'center top', // 👈 Ensures storefront sign is visible
           backgroundRepeat: 'no-repeat'
         }}
       >
