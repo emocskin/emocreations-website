@@ -1,6 +1,4 @@
 // app/blend/page.js
-export const dynamic = 'force-client'; // ← Critical fix: prevents prerender error
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -14,7 +12,7 @@ export default function BlendAccessPage() {
   const [hasAccess, setHasAccess] = useState(false);
   const [checking, setChecking] = useState(true);
 
-  // Mock product data — in production, you can fetch from Supabase
+  // Product data — includes all 13 blends
   const products = {
     'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156 },
     'menopause': { name: 'Menopause Blend', price: 58, xec: 103 },
@@ -34,10 +32,13 @@ export default function BlendAccessPage() {
 
   const product = products[blendSlug] || products['xe'];
 
-  // Simulate access check (no real check in demo)
   useEffect(() => {
-    setHasAccess(false);
-    setChecking(false);
+    // Simulate access check (always false in demo)
+    const timer = setTimeout(() => {
+      setHasAccess(false);
+      setChecking(false);
+    }, 800);
+    return () => clearTimeout(timer);
   }, [blendSlug]);
 
   if (checking) {
@@ -58,7 +59,7 @@ export default function BlendAccessPage() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Unified Banner — matches /about-xec */}
+      {/* Hero Banner — matches /about-xec */}
       <div 
         className="relative h-80 flex items-center justify-center"
         style={{
@@ -77,7 +78,7 @@ export default function BlendAccessPage() {
         </div>
       </div>
 
-      {/* Value Proposition */}
+      {/* Value & Pricing */}
       <section className="py-12 px-6 max-w-4xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
@@ -108,7 +109,6 @@ export default function BlendAccessPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center">Unlock With</h2>
           
-          {/* XEC Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
             <h3 className="text-xl font-bold mb-4 text-turquoise">Pay with $XEC (Recommended)</h3>
             <p className="text-gray-400 mb-4">
@@ -122,13 +122,11 @@ export default function BlendAccessPage() {
             </Link>
           </div>
 
-          {/* PayPal Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800">
             <h3 className="text-xl font-bold mb-4">Or Pay with Card</h3>
             <p className="text-gray-400 mb-4">
               Use PayPal for secure checkout. Ships in 3–5 days.
             </p>
-            {/* Fixed PayPal Button */}
             <form 
               action="https://www.paypal.com/cgi-bin/webscr" 
               method="post" 
@@ -149,7 +147,7 @@ export default function BlendAccessPage() {
         </div>
       </section>
 
-      {/* Trust & Compliance */}
+      {/* Compliance */}
       <section className="py-8 px-6 text-center text-gray-500 text-sm">
         <p>
           Formulated with cellular wellness in mind. Not a treatment. Complementary support only.  
