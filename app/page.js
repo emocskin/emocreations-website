@@ -39,8 +39,8 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="font-sans bg-black text-white min-h-screen">
-      {/* ✅ Homepage Banner — identical to /about-xec */}
+    <div className="font-sans bg-black text-white min-h-screen relative">
+      {/* Hero Banner */}
       <div 
         className="relative h-96 md:h-[500px] flex items-center justify-center"
         style={{
@@ -51,12 +51,32 @@ export default function HomePage() {
         }}
       >
         <div className="absolute inset-0 bg-black/70"></div>
+        
+        {/* ✅ XEC Logo */}
+        <div className="absolute top-6 left-6 z-20">
+          <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
+        </div>
+
         <div className="relative z-10 text-center px-4">
           <h1 className="text-3xl md:text-5xl font-bold mb-6">Your skin deserves more than guesswork.</h1>
           <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">
             At EmoCreations.skin, our AI doesn’t just blend oils—<br />
             <span className="text-turquoise">it studies the science of synergy</span> to create intelligent, evidence-informed elixirs that honor your skin’s innate intelligence.
           </p>
+          <div className="flex flex-wrap justify-center gap-4 mt-8">
+            <Link
+              href="/blend"
+              className="bg-turquoise hover:bg-teal-400 text-black py-3 px-8 rounded-full font-medium transition font-bold"
+            >
+              Create Your Blend
+            </Link>
+            <Link
+              href="/store"
+              className="border border-turquoise text-turquoise hover:bg-turquoise/10 py-3 px-8 rounded-full font-medium transition"
+            >
+              Shop Oils
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -84,7 +104,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ✅ MOVED: Core Paths cards — now ABOVE gallery */}
+      {/* Core Paths — moved above gallery */}
       <section className="py-16 px-6 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <PathCard title="AI Blending App" description="Personalized, synergistic blends—crafted by AI, rooted in peer-reviewed science." href="/blend" />

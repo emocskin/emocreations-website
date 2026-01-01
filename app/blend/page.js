@@ -11,7 +11,6 @@ export default function BlendPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const blendSlug = urlParams.get('blend') || 'xe';
 
-    // Full product catalog with pricing
     const products = {
       'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156 },
       'xe': { name: 'XE – Everybody’s Oil', price: 38, xec: 67 },
@@ -53,6 +52,12 @@ export default function BlendPage() {
         }}
       >
         <div className="absolute inset-0 bg-black/70"></div>
+        
+        {/* ✅ XEC Logo */}
+        <div className="absolute top-6 left-6 z-20">
+          <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
+        </div>
+
         <div className="relative z-10 text-center px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
           <p className="text-lg text-gray-300">
@@ -92,7 +97,6 @@ export default function BlendPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center">Unlock With</h2>
           
-          {/* XEC Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
             <h3 className="text-xl font-bold mb-4 text-turquoise">Pay with $XEC (Recommended)</h3>
             <p className="text-gray-400 mb-4">
@@ -106,7 +110,6 @@ export default function BlendPage() {
             </Link>
           </div>
 
-          {/* PayPal Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800">
             <h3 className="text-xl font-bold mb-4">Or Pay with Card</h3>
             <p className="text-gray-400 mb-4">

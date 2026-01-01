@@ -3,7 +3,6 @@
 
 import Link from 'next/link';
 
-// Static product data
 const PRODUCTS = [
   { name: "XE – Everybody’s Oil", slug: "xe", tier: "entry", sizes: [{ size_label: "Roller", usd_price: 38, xec_amount: 67 }, { size_label: "3 oz", usd_price: 38, xec_amount: 67 }] },
   { name: "The Queen’s Oil", slug: "queen", tier: "signature", sizes: [{ size_label: "Roller", usd_price: 38, xec_amount: 67 }, { size_label: "3 oz", usd_price: 58, xec_amount: 103 }, { size_label: "8 oz", usd_price: 98, xec_amount: 173 }] },
@@ -31,7 +30,7 @@ const TIER_COLORS = {
 export default function StorePage() {
   return (
     <div className="font-sans bg-black text-white min-h-screen">
-      {/* ✅ Store Banner — identical to /about-xec */}
+      {/* Banner */}
       <div 
         className="relative h-96 md:h-[500px] flex items-center justify-center"
         style={{
@@ -42,6 +41,12 @@ export default function StorePage() {
         }}
       >
         <div className="absolute inset-0 bg-black/70"></div>
+        
+        {/* ✅ XEC Logo */}
+        <div className="absolute top-6 left-6 z-20">
+          <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
+        </div>
+
         <div className="relative z-10 text-center px-4">
           <h1 className="text-3xl md:text-5xl font-bold mb-6">The Apothecary</h1>
           <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto">
