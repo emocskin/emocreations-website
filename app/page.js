@@ -52,7 +52,7 @@ export default function HomePage() {
       >
         <div className="absolute inset-0 bg-black/70"></div>
         
-        {/* XEC Logo */}
+        {/* ✅ XEC Logo */}
         <div className="absolute top-6 left-6 z-20">
           <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
         </div>
@@ -173,36 +173,82 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* YouTube Video Gallery */}
+      {/* ✅ YouTube Section — Your Channel Only */}
       <section className="relative z-10 py-16 px-6 bg-black">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">AI Wellness in Action</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { id: 'dQw4w9WgXcQ', title: 'The Science of Synergy' },
-              { id: 'jNQXAC9IVRw', title: 'Meet The Unbroken Ointment' },
-              { id: 'V1bFr2SWP1I', title: 'How to Use Your AI Blend' }
-            ].map((video, i) => (
-              <div key={i} className="bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 group hover:border-turquoise transition">
-                <div className="aspect-video relative">
-                  <iframe
-                    src={`https://www.youtube.com/embed/${video.id}?enablejsapi=1`}
-                    title={video.title}
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="w-full h-full absolute top-0 left-0"
-                  ></iframe>
-                </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-white text-center">{video.title}</h3>
-                </div>
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 flex flex-col items-center justify-center p-8 text-center group hover:border-turquoise transition">
+              <div className="w-16 h-16 rounded-full bg-turquoise/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-turquoise">
+                  <path d="M19.5 3.75a3 3 0 0 1 3 3v10.5a3 3 0 0 1-3 3H4.5a3 3 0 0 1-3-3V6.75a3 3 0 0 1 3-3h15Zm-13.5 6a.75.75 0 0 0 0 1.5h9a.75.75 0 0 0 0-1.5h-9Zm0 3a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5H6Z" />
+                </svg>
               </div>
-            ))}
+              <h3 className="font-bold text-white text-lg mb-2">Videos Coming Soon</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                Real demos, blend tutorials, and science breakdowns — launching soon.
+              </p>
+              <a
+                href="https://www.youtube.com/@emocskin-xec"
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-2 text-turquoise hover:text-teal-300 font-medium"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path d="M19.5 3.75a3 3 0 0 1 3 3v10.5a3 3 0 0 1-3 3H4.5a3 3 0 0 1-3-3V6.75a3 3 0 0 1 3-3h15Zm-13.5 6a.75.75 0 0 0 0 1.5h9a.75.75 0 0 0 0-1.5h-9Zm0 3a.75.75 0 0 0 0 1.5h7.5a.75.75 0 0 0 0-1.5H6Z" />
+                </svg>
+                Subscribe on YouTube
+              </a>
+            </div>
+
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 flex flex-col items-center justify-center p-8 text-center group hover:border-turquoise transition">
+              <div className="w-16 h-16 rounded-full bg-turquoise/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-turquoise">
+                  <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-white text-lg mb-2">Blend Tutorials</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                Learn how to use your AI-blended oils for maximum effect.
+              </p>
+              <a
+                href="https://www.youtube.com/@emocskin-xec"
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-2 text-turquoise hover:text-teal-300 font-medium"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+                </svg>
+                Watch on YouTube
+              </a>
+            </div>
+
+            <div className="bg-gray-900 rounded-2xl border border-gray-800 flex flex-col items-center justify-center p-8 text-center group hover:border-turquoise transition">
+              <div className="w-16 h-16 rounded-full bg-turquoise/10 flex items-center justify-center mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-turquoise">
+                  <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                  <path fillRule="evenodd" d="M12.006 21.5a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm4.394-10.411a.75.75 0 0 1 .3-.944l1.75-1.19a.75.75 0 0 1 1.188.854l-.84 2.495a.75.75 0 0 1-.75.5.75.75 0 0 1-.5-.25L16.507 11a.75.75 0 0 1-.113-.589ZM5.037 13.5l1.057 3.125a.75.75 0 0 1-.5.943.75.75 0 0 1-.943-.501l-.84-2.495a.75.75 0 0 1 .501-.943l1.75-1.19a.75.75 0 0 1 .978.457Z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <h3 className="font-bold text-white text-lg mb-2">Science Deep Dives</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                The clinical research behind our AI formulation engine.
+              </p>
+              <a
+                href="https://www.youtube.com/@emocskin-xec"
+                target="_blank"
+                rel="noopener"
+                className="inline-flex items-center gap-2 text-turquoise hover:text-teal-300 font-medium"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                  <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+                  <path fillRule="evenodd" d="M12.006 21.5a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm4.394-10.411a.75.75 0 0 1 .3-.944l1.75-1.19a.75.75 0 0 1 1.188.854l-.84 2.495a.75.75 0 0 1-.75.5.75.75 0 0 1-.5-.25L16.507 11a.75.75 0 0 1-.113-.589ZM5.037 13.5l1.057 3.125a.75.75 0 0 1-.5.943.75.75 0 0 1-.943-.501l-.84-2.495a.75.75 0 0 1 .501-.943l1.75-1.19a.75.75 0 0 1 .978.457Z" clipRule="evenodd" />
+                </svg>
+                Learn on YouTube
+              </a>
+            </div>
           </div>
-          <p className="text-center text-gray-500 text-sm mt-8">
-            New videos added weekly. Subscribe on <a href="https://youtube.com/@emocreations" target="_blank" className="text-turquoise hover:underline">YouTube</a>.
-          </p>
         </div>
       </section>
 
@@ -250,7 +296,7 @@ function PathCard({ title, description, href = "#", external = false }) {
     <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-turquoise transition">
       <h3 className="text-xl font-bold mb-3 text-white">{title}</h3>
       <p className="text-gray-400 text-sm mb-4">{description}</p>
-      {/* ✅ Button is NOW visible without hover: bg-turquoise -> bg-emerald-500 for contrast */}
+      {/* ✅ Always visible: bg-emerald-500 */}
       <Target 
         {...props} 
         className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black py-2 px-4 rounded font-medium text-sm transition"
