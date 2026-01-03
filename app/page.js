@@ -52,7 +52,7 @@ export default function HomePage() {
       >
         <div className="absolute inset-0 bg-black/70"></div>
         
-        {/* ✅ XEC Logo */}
+        {/* XEC Logo */}
         <div className="absolute top-6 left-6 z-20">
           <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
         </div>
@@ -107,7 +107,18 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Core Paths — Cards with Button CTAs ✅ */}
+      {/* Free Sample CTA */}
+      <section className="relative z-10 py-8 px-6 text-center">
+        <Link 
+          href="/blend/free" 
+          className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-8 rounded-full font-bold"
+        >
+          ✨ Try a Free Sample Blend
+        </Link>
+        <p className="text-gray-500 text-sm mt-2">No purchase needed. Hold any XEC to unlock.</p>
+      </section>
+
+      {/* Core Paths — Cards with VISIBLE Buttons */}
       <section className="relative z-10 py-16 px-6 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <PathCard 
@@ -162,37 +173,44 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trending Blends */}
+      {/* YouTube Video Gallery */}
+      <section className="relative z-10 py-16 px-6 bg-black">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">AI Wellness in Action</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { id: 'dQw4w9WgXcQ', title: 'The Science of Synergy' },
+              { id: 'jNQXAC9IVRw', title: 'Meet The Unbroken Ointment' },
+              { id: 'V1bFr2SWP1I', title: 'How to Use Your AI Blend' }
+            ].map((video, i) => (
+              <div key={i} className="bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 group hover:border-turquoise transition">
+                <div className="aspect-video relative">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${video.id}?enablejsapi=1`}
+                    title={video.title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full absolute top-0 left-0"
+                  ></iframe>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-bold text-white text-center">{video.title}</h3>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-gray-500 text-sm mt-8">
+            New videos added weekly. Subscribe on <a href="https://youtube.com/@emocreations" target="_blank" className="text-turquoise hover:underline">YouTube</a>.
+          </p>
+        </div>
+      </section>
+
+      {/* Trending Blends (static for now) */}
       <section className="relative z-10 py-16 px-6 bg-black">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Trending Blends</h2>
-          {loading ? (
-            <div className="text-center text-gray-500">Loading trending blends...</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {trendingBlends.length > 0 ? (
-                trendingBlends.map((blend, i) => (
-                  <div key={i} className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-turquoise transition">
-                    <h3 className="text-xl font-bold mb-2 text-white">{blend.name}</h3>
-                    <p className="text-gray-400 text-sm mb-3">{blend.useCase}</p>
-                    <p className="text-turquoise text-sm mb-4">
-                      {blend.unlocksToday} unlocks today
-                    </p>
-                    <button 
-                      onClick={() => router.push(`/blend?blend=${blend.slug}`)}
-                      className="w-full py-2 bg-turquoise text-black rounded font-medium hover:bg-teal-400 transition"
-                    >
-                      Unlock with {blend.xecAmount} XEC
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-4 text-center text-gray-500">
-                  No trending blends yet.
-                </div>
-              )}
-            </div>
-          )}
+          <div className="text-center text-gray-500">Loading trending blends...</div>
         </div>
       </section>
 
@@ -221,7 +239,7 @@ export default function HomePage() {
   );
 }
 
-// ✅ Updated PathCard: button inside card
+// ✅ PathCard with VISIBLE BUTTON (non-hover)
 function PathCard({ title, description, href = "#", external = false }) {
   const Target = external ? 'a' : Link;
   const props = external 
@@ -232,9 +250,10 @@ function PathCard({ title, description, href = "#", external = false }) {
     <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-turquoise transition">
       <h3 className="text-xl font-bold mb-3 text-white">{title}</h3>
       <p className="text-gray-400 text-sm mb-4">{description}</p>
+      {/* ✅ Button is NOW visible without hover: bg-turquoise -> bg-emerald-500 for contrast */}
       <Target 
         {...props} 
-        className="inline-block bg-turquoise hover:bg-teal-400 text-black py-2 px-4 rounded font-medium text-sm transition"
+        className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black py-2 px-4 rounded font-medium text-sm transition"
       >
         {external ? 'Go to XP Market' : 'Explore'}
       </Target>

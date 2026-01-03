@@ -6,7 +6,7 @@ import Link from 'next/link';
 export default function GetStartedPage() {
   return (
     <div className="font-sans bg-black text-white min-h-screen">
-      {/* ✅ Universal Banner — identical to /about-xec */}
+      {/* Hero Banner */}
       <div 
         className="relative h-80 flex items-center justify-center"
         style={{
@@ -17,6 +17,12 @@ export default function GetStartedPage() {
         }}
       >
         <div className="absolute inset-0 bg-black/70"></div>
+        
+        {/* XEC Logo */}
+        <div className="absolute top-6 left-6 z-20">
+          <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
+        </div>
+
         <div className="relative z-10 text-center px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">Get Started with $XEC</h1>
           <p className="text-lg text-gray-300">
@@ -44,18 +50,20 @@ export default function GetStartedPage() {
           <p className="text-gray-400 mb-4">
             Coinbase is one of the easiest and safest places to buy cryptocurrency.
           </p>
-          <ol className="text-gray-400 list-decimal list-inside space-y-2 mb-4">
-            <li>Go to: <a href="https://coinbase.com/join/RKSS54G?src=referral-link" target="_blank" className="text-turquoise hover:underline">coinbase.com/join/RKSS54G</a> (this link supports our project!)</li>
-            <li>Click “Get started”</li>
-            <li>Fill in your name, email, and create a strong password</li>
-            <li>Verify your email and phone number</li>
-            <li>Verify your identity (upload ID + selfie)</li>
-          </ol>
-          <p className="text-sm text-gray-500">
+          {/* ✅ Coinbase as BUTTON */}
+          <Link
+            href="https://coinbase.com/join/RKSS54G?src=referral-link"
+            target="_blank"
+            className="inline-block bg-emerald-500 hover:bg-emerald-400 text-black py-2 px-4 rounded font-medium text-sm transition"
+          >
+            Join Coinbase →
+          </Link>
+          <p className="text-sm text-gray-500 mt-3">
             ⏳ Approval usually takes 5–30 minutes.
           </p>
         </div>
 
+        {/* Remaining steps unchanged... */}
         <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
           <h2 className="text-2xl font-bold mb-4 flex items-center">
             <span className="bg-turquoise text-black w-8 h-8 rounded-full flex items-center justify-center mr-3">2</span>
