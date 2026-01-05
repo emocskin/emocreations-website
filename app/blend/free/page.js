@@ -6,7 +6,7 @@ import Link from 'next/link';
 
 export default function FreeSamplePage() {
   const [hasXEC, setHasXEC] = useState(false);
-  const [loading, setLoading] = = useState(true);
+  const [loading, setLoading] = useState(true); // ✅ FIXED: removed extra "="
 
   useEffect(() => {
     // In production: integrate Xaman wallet check
