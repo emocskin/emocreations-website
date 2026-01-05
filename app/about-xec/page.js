@@ -8,15 +8,18 @@ export default function AboutXECPage() {
   const [poolData, setPoolData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch XP Market pool data
+  // Mock XP Market pool data (replace with live API later)
   useEffect(() => {
     const fetchPoolData = async () => {
       try {
-        const res = await fetch('/api/xpmarket-pool');
-        if (res.ok) {
-          const data = await res.json();
-          setPoolData(data);
-        }
+        // For now, use mock data based on your pool
+        const mockData = {
+          price: 0.26,
+          usdPrice: 0.26 * 2.17,
+          volume: "0.35",
+          fee: 1
+        };
+        setPoolData(mockData);
       } catch (e) {
         console.error('Failed to fetch pool data');
       } finally {
@@ -39,6 +42,12 @@ export default function AboutXECPage() {
         }}
       >
         <div className="absolute inset-0 bg-black/70"></div>
+        
+        {/* ✅ XEC Logo */}
+        <div className="absolute top-6 left-6 z-20">
+          <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
+        </div>
+
         <div className="relative z-10 text-center px-4">
           <h1 className="text-3xl md:text-5xl font-bold mb-6">About $XEC</h1>
           <p className="text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
@@ -60,7 +69,6 @@ export default function AboutXECPage() {
               <li>• Premium AI-blended essential oil recipes</li>
               <li>• Physical bottles of our clinical-grade elixirs</li>
               <li>• Exclusive community access and early product releases</li>
-              <li>• Future experiences (like Lambo rides and jet trips)</li>
             </ul>
             <p className="text-gray-400">
               This isn’t speculation. It’s real utility — designed to create sustainable demand through science, intention, and exclusivity.
@@ -104,7 +112,7 @@ export default function AboutXECPage() {
             </div>
           ) : (
             <div className="text-center text-gray-500">
-              Could not load pool data. Please check back later.
+              Could not load pool data.
             </div>
           )}
           <div className="mt-8 text-center">
@@ -127,7 +135,7 @@ export default function AboutXECPage() {
             <div className="md:w-1/3">
               <h3 className="text-xl font-bold mb-4">Step 1: Sign Up on Coinbase</h3>
               <p className="text-gray-400">
-                If you don’t have an account, sign up at Coinbase using my referral link:
+                If you don’t have an account, sign up using our referral link:
               </p>
               <Link
                 href="https://coinbase.com/join/RKSS54G?src=referral-link"
@@ -143,7 +151,7 @@ export default function AboutXECPage() {
                 Once verified, buy XRP with your card or bank transfer. You’ll need XRP to swap for XEC.
               </p>
               <p className="text-gray-400">
-                ⚠️ Note: Only card/bank buys qualify for the $10 bonus — trades on Coinbase Pro are not eligible.
+                ⚠️ Only card/bank buys qualify for the $10 bonus — trades on Coinbase Pro are not eligible.
               </p>
             </div>
           </div>
@@ -153,7 +161,7 @@ export default function AboutXECPage() {
               Open the Xaman Wallet app, tap “Discover,” search for “XPMarket,” and go to the XEC/XRP pool. Swap your XRP for XEC.
             </p>
             <p className="text-gray-400">
-              💡 Tip: Start with 100 XRP to test the process. You can always add more liquidity later.
+              💡 Tip: Start with 100 XRP to test the process.
             </p>
           </div>
         </div>
@@ -167,13 +175,13 @@ export default function AboutXECPage() {
             <div className="bg-black p-6 rounded-2xl border border-gray-800">
               <h3 className="text-xl font-bold mb-4">Real Utility</h3>
               <p className="text-gray-400">
-                Unlock premium AI blends, physical products, and community access — not just speculative tokens.
+                Unlock premium AI blends, physical products, and community access.
               </p>
             </div>
             <div className="bg-black p-6 rounded-2xl border border-gray-800">
               <h3 className="text-xl font-bold mb-4">Sustainable Demand</h3>
               <p className="text-gray-400">
-                Our autonomous agents drive real demand — no artificial scarcity, no hype.
+                Our autonomous agents drive real demand — no artificial scarcity.
               </p>
             </div>
             <div className="bg-black p-6 rounded-2xl border border-gray-800">
@@ -182,6 +190,26 @@ export default function AboutXECPage() {
                 Every blend is AI-curated, evidence-informed, and clinically relevant.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ✅ XP Market Token Card — NEW */}
+      <section className="py-16 px-6 bg-gray-900">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-6">Live Token Metrics</h2>
+          <div className="bg-black p-6 rounded-2xl border border-gray-800">
+            <p className="text-gray-400 mb-4">
+              View real-time stats, liquidity, and trading data for $XEC on XP Market.
+            </p>
+            <a
+              href="https://xpmarket.com/token/XEC-rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX"
+              target="_blank"
+              rel="noopener"
+              className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-8 rounded-full font-medium transition"
+            >
+              View on XP Market →
+            </a>
           </div>
         </div>
       </section>
