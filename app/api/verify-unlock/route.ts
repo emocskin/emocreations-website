@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
     // Step 3: Get XEC USD value (using XRP price * your pool rate)
     let xecUsd = 0.26 * 2.17; // fallback: 0.26 XRP/XEC * $2.17/XRP
     try {
-      const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=xrp&vs_currencies=usd', { timeout: 5000 });
+      const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=xrp&vs_currencies=usd');
       if (cgRes.ok) {
         const prices = await cgRes.json();
         xecUsd = 0.26 * prices.xrp.usd;
