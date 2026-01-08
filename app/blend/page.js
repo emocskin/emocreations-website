@@ -6,6 +6,8 @@ import Link from 'next/link';
 
 export default function BlendPage() {
   const [product, setProduct] = useState(null);
+  const [unlockStatus, setUnlockStatus] = useState('idle'); // idle | loading | checking | unlocked | insufficient
+  const [lastBalance, setLastBalance] = useState(null);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -31,6 +33,54 @@ export default function BlendPage() {
     setProduct(products[blendSlug] || products['xe']);
   }, []);
 
+  const handleUnlockWithXec = async () => {
+    if (!product) return;
+    
+    setUnlockStatus('loading');
+    
+    try {
+      // Step 1: Create Xaman sign request
+      const res1 = await fetch('/api/unlock-xec', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ blendSlug: product.slug || window.location.search.split('blend=')[1] })
+      });
+      
+      const data1 = await res1.json();
+      if (!data1.success) throw new Error('Failed to create request');
+
+      // Step 2: Open Xaman
+      window.open(data1.next_url, '_blank');
+
+      // Step 3: Poll for verification
+      setUnlockStatus('checking');
+      const interval = setInterval(async () => {
+        const res2 = await fetch('/api/verify-unlock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uuid: data1.uuid, blendSlug: product.slug || window.location.search.split('blend=')[1] })
+        });
+        const data2 = await res2.json();
+
+        if (data2.unlocked) {
+          clearInterval(interval);
+          setUnlockStatus('unlocked');
+        } else if (data2.success === false || data2.error) {
+          clearInterval(interval);
+          setUnlockStatus('idle');
+        } else if (!data2.unlocked && data2.success) {
+          clearInterval(interval);
+          setLastBalance(data2);
+          setUnlockStatus('insufficient');
+        }
+      }, 3000);
+    } catch (error) {
+      console.error('Unlock error:', error);
+      alert('Failed to start XEC unlock. Please try again.');
+      setUnlockStatus('idle');
+    }
+  };
+
   if (!product) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -53,7 +103,7 @@ export default function BlendPage() {
       >
         <div className="absolute inset-0 bg-black/70"></div>
         
-        {/* ✅ XEC Logo */}
+        {/* XEC Logo */}
         <div className="absolute top-6 left-6 z-20">
           <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
         </div>
@@ -97,19 +147,47 @@ export default function BlendPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center">Unlock With</h2>
           
+          {/* XEC Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
             <h3 className="text-xl font-bold mb-4 text-turquoise">Pay with $XEC (Recommended)</h3>
-            <p className="text-gray-400 mb-4">
-              Hold {product.xec} XEC in your Xaman wallet to unlock instantly.
-            </p>
-            <Link
-              href="/get-started"
-              className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-6 rounded font-medium transition"
-            >
-              Get XEC Guide →
-            </Link>
+            
+            {unlockStatus === 'checking' ? (
+              <p>Verifying your wallet and XEC balance...</p>
+            ) : unlockStatus === 'unlocked' ? (
+              <div>
+                <p className="text-green-400 mb-4">✅ Unlock successful!</p>
+                <p className="text-gray-300 mb-4">Your full blend recipe is now available in your email or account.</p>
+                <Link
+                  href="/account"
+                  className="inline-block bg-turquoise text-black py-2 px-4 rounded"
+                >
+                  View My Blends
+                </Link>
+              </div>
+            ) : (
+              <>
+                <p className="text-gray-400 mb-4">
+                  Hold {product.xec} XEC ({(product.xec * 0.26 * 2.17).toFixed(2)} USD) to unlock instantly.
+                </p>
+                <button
+                  onClick={handleUnlockWithXec}
+                  disabled={unlockStatus === 'loading'}
+                  className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-6 rounded font-medium transition"
+                >
+                  {unlockStatus === 'loading' ? 'Processing...' : 'Unlock with XEC'}
+                </button>
+                
+                {unlockStatus === 'insufficient' && lastBalance && (
+                  <p className="text-red-400 mt-2 text-sm">
+                    Insufficient balance. You have {lastBalance.xecBalance?.toFixed(0) || 0} XEC (${lastBalance.usdValue?.toFixed(2) || 0}).<br />
+                    <Link href="/get-started" className="text-turquoise hover:underline">Get more XEC →</Link>
+                  </p>
+                )}
+              </>
+            )}
           </div>
 
+          {/* PayPal Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800">
             <h3 className="text-xl font-bold mb-4">Or Pay with Card</h3>
             <p className="text-gray-400 mb-4">
