@@ -2,10 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Xaman API (use your Business API key)
-const XAMAN_API_KEY = process.env.XAMAN_API_KEY;
-const XAMAN_BUSINESS_ID = process.env.XAMAN_BUSINESS_ID;
-
+// Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -15,7 +12,11 @@ export async function POST(req: NextRequest) {
   try {
     const { action_id } = await req.json();
 
-    // Fetch action
+    if (!action_id) {
+      return NextResponse.json({ error: 'Missing action_id' }, { status: 400 });
+    }
+
+    // Fetch action from Supabase
     const { data: action, error } = await supabase
       .from('agent_actions')
       .select('*')
@@ -30,13 +31,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Already processed' }, { status: 400 });
     }
 
-    const xamanAddress = action.user_identifier; // e.g., r... XRPL address
+    const xamanAddress = action.user_identifier;
+
+    // Validate XRPL address
     if (!xamanAddress || !xamanAddress.startsWith('r')) {
       await supabase
         .from('agent_actions')
-        .update({ status: 'failed', meta { error: 'Invalid XRPL address' } })
+        .update({ 
+          status: 'failed', 
+          meta: { error: 'Invalid XRPL address' } 
+        })
         .eq('id', action.id);
-      return NextResponse.json({ error: 'Invalid address' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid XRPL address' }, { status: 400 });
     }
 
     // === SEND XEC VIA XAMAN WEBHOOK ===
@@ -50,18 +56,17 @@ export async function POST(req: NextRequest) {
         },
       },
       options: {
-        // Optional: add memo
         memo: 'Reward for social share • EmoCreations.skin',
       },
     };
 
     const xamanRes = await fetch(
-      `https://xaman.app/api/v1/business/${XAMAN_BUSINESS_ID}/payload`,
+      `https://xaman.app/api/v1/business/${process.env.XAMAN_BUSINESS_ID}/payload`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': XAMAN_API_KEY!,
+          'X-API-Key': process.env.XAMAN_API_KEY!,
         },
         body: JSON.stringify(payload),
       }
@@ -72,7 +77,10 @@ export async function POST(req: NextRequest) {
     if (!xamanRes.ok || xamanData.error) {
       await supabase
         .from('agent_actions')
-        .update({ status: 'failed', meta { xaman_error: xamanData } })
+        .update({ 
+          status: 'failed', 
+          meta: { xaman_error: xamanData } 
+        })
         .eq('id', action.id);
       return NextResponse.json({ error: 'Xaman send failed' }, { status: 500 });
     }
@@ -83,13 +91,13 @@ export async function POST(req: NextRequest) {
       .update({ 
         status: 'sent', 
         tx_hash: xamanData.txid,
-        meta { ...action.metadata, xaman_payload_uuid: xamanData.uuid }
+        meta: { ...action.meta, xaman_payload_uuid: xamanData.uuid }
       })
       .eq('id', action.id);
 
     return NextResponse.json({ success: true, txid: xamanData.txid });
   } catch (error) {
     console.error('Reward error:', error);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
