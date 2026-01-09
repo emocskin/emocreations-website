@@ -16,7 +16,7 @@ type AgentAction = {
   xec_amount: number;
   status: string;
   tx_hash: string | null;
-  meta any | null;
+  meta: any | null;
   created_at: string;
 };
 
