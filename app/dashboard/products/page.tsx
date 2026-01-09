@@ -9,6 +9,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// ✅ Define types explicitly
+type ProductTier = 'entry' | 'signature' | 'premium' | 'ultra_premium';
+
 type ProductSize = {
   size_label: string;
   usd_price: number;
@@ -19,7 +22,7 @@ type Product = {
   id: string;
   name: string;
   slug: string;
-  tier: 'entry' | 'signature' | 'premium' | 'ultra_premium';
+  tier: ProductTier;
   sizes: ProductSize[];
   created_at: string;
 };
@@ -29,12 +32,16 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
-  const [form, setForm] = useState({
+
+  // ✅ Explicitly type form state with full tier union
+  const initialFormState = {
     name: '',
     slug: '',
-    tier: 'entry' as const,
+    tier: 'entry' as ProductTier,
     sizes: [{ size_label: '', usd_price: 0, xec_amount: 0 }] as ProductSize[],
-  });
+  };
+
+  const [form, setForm] = useState(initialFormState);
 
   useEffect(() => {
     fetchProducts();
@@ -49,12 +56,7 @@ export default function ProductsPage() {
   const handleCreate = () => {
     setIsEditing(false);
     setCurrentProduct(null);
-    setForm({
-      name: '',
-      slug: '',
-      tier: 'entry',
-      sizes: [{ size_label: '', usd_price: 0, xec_amount: 0 }],
-    });
+    setForm(initialFormState);
   };
 
   const handleEdit = (product: Product) => {
@@ -63,7 +65,7 @@ export default function ProductsPage() {
     setForm({
       name: product.name,
       slug: product.slug,
-      tier: product.tier,
+      tier: product.tier, // ✅ Now compatible: both are ProductTier
       sizes: product.sizes,
     });
   };
@@ -89,7 +91,6 @@ export default function ProductsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
     if (!form.name || !form.slug || form.sizes.length === 0) {
       alert('Please fill all required fields');
       return;
@@ -97,7 +98,6 @@ export default function ProductsPage() {
 
     try {
       if (isEditing && currentProduct) {
-        // Update existing
         await supabase
           .from('products')
           .update({
@@ -109,7 +109,6 @@ export default function ProductsPage() {
           })
           .eq('id', currentProduct.id);
       } else {
-        // Create new
         await supabase.from('products').insert([{
           name: form.name,
           slug: form.slug,
@@ -172,7 +171,7 @@ export default function ProductsPage() {
               />
               <select
                 value={form.tier}
-                onChange={(e) => setForm({ ...form, tier: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, tier: e.target.value as ProductTier })}
                 className="p-3 bg-black border border-gray-800 rounded"
               >
                 <option value="entry">Entry</option>
