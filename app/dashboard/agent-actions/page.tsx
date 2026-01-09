@@ -16,7 +16,7 @@ type AgentAction = {
   xec_amount: number;
   status: string;
   tx_hash: string | null;
-  meta: any | null;
+  meta: any | null; // ✅ Field name matches Supabase column "meta"
   created_at: string;
 };
 
@@ -72,9 +72,10 @@ export default function AgentActionsPage() {
                   <p className="text-gray-400 text-sm">
                     User: {action.user_identifier || '—'}
                   </p>
-                  {action.metadata?.tweet_id && (
+                  {/* ✅ Use "meta" not "metadata" */}
+                  {action.meta?.tweet_id && (
                     <a
-                      href={`https://twitter.com/user/status/${action.metadata.tweet_id}`}
+                      href={`https://twitter.com/user/status/${action.meta.tweet_id}`}
                       target="_blank"
                       rel="noopener"
                       className="text-turquoise text-sm hover:underline"
