@@ -6,78 +6,102 @@ import Link from 'next/link';
 
 export default function BlendPage() {
   const [product, setProduct] = useState(null);
-  const [unlockStatus, setUnlockStatus] = useState('idle'); // idle | loading | checking | unlocked | insufficient
-  const [lastBalance, setLastBalance] = useState(null);
+  const [verificationState, setVerificationState] = useState('idle'); // idle | verifying | unlocked | insufficient
+  const [xecBalance, setXecBalance] = useState(0);
+  const [usdValue, setUsdValue] = useState(0);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const blendSlug = urlParams.get('blend') || 'xe';
 
     const products = {
-      'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156 },
-      'xe': { name: 'XE – Everybody’s Oil', price: 38, xec: 67 },
-      'queen': { name: 'Queen’s Oil', price: 58, xec: 103 },
-      'king': { name: 'The King’s Oil', price: 58, xec: 103 },
-      'menopause': { name: 'Menopause Blend', price: 58, xec: 103 },
-      'sciatic': { name: 'Deep Relief Sciatic Soother', price: 88, xec: 156 },
-      'telomere': { name: 'Telomere Repair Serum', price: 168, xec: 297 },
-      'joint': { name: 'Joint Ease Relief Elixir', price: 78, xec: 138 },
-      'glucose': { name: 'Glucose Balance Circulation Therapy', price: 78, xec: 138 },
-      'shoulder': { name: 'Shoulder Freedom Floral Therapy', price: 88, xec: 156 },
-      'headache': { name: 'Serene Relief Headache Therapy', price: 78, xec: 138 },
-      'opioid': { name: 'Opioid Recovery Blend', price: 78, xec: 138 },
-      'blood-type-a': { name: 'Blood Type A Blend', price: 58, xec: 103 },
-      'metabolism': { name: 'Metabolism Boost Elixir', price: 58, xec: 103 }
+      'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156, slug: 'unbroken' },
+      'xe': { name: 'XE – Everybody’s Oil', price: 38, xec: 67, slug: 'xe' },
+      'queen': { name: 'Queen’s Oil', price: 58, xec: 103, slug: 'queen' },
+      'king': { name: 'The King’s Oil', price: 58, xec: 103, slug: 'king' },
+      'menopause': { name: 'Menopause Blend', price: 58, xec: 103, slug: 'menopause' },
+      'sciatic': { name: 'Deep Relief Sciatic Soother', price: 88, xec: 156, slug: 'sciatic' },
+      'telomere': { name: 'Telomere Repair Serum', price: 168, xec: 297, slug: 'telomere' },
+      'joint': { name: 'Joint Ease Relief Elixir', price: 78, xec: 138, slug: 'joint' },
+      'glucose': { name: 'Glucose Balance Circulation Therapy', price: 78, xec: 138, slug: 'glucose' },
+      'shoulder': { name: 'Shoulder Freedom Floral Therapy', price: 88, xec: 156, slug: 'shoulder' },
+      'headache': { name: 'Serene Relief Headache Therapy', price: 78, xec: 138, slug: 'headache' },
+      'opioid': { name: 'Opioid Recovery Blend', price: 78, xec: 138, slug: 'opioid' },
+      'blood-type-a': { name: 'Blood Type A Blend', price: 58, xec: 103, slug: 'blood-type-a' },
+      'metabolism': { name: 'Metabolism Boost Elixir', price: 58, xec: 103, slug: 'metabolism' }
     };
 
     setProduct(products[blendSlug] || products['xe']);
   }, []);
 
-  const handleUnlockWithXec = async () => {
+  const handleVerifyWallet = async () => {
     if (!product) return;
-    
-    setUnlockStatus('loading');
-    
+
+    setVerificationState('verifying');
+
     try {
-      // Step 1: Create Xaman sign request
-      const res1 = await fetch('/api/unlock-xec', {
+      // Step 1: Create Xaman payload
+      const payloadRes = await fetch('https://xaman.app/api/v2/payload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ blendSlug: product.slug || window.location.search.split('blend=')[1] })
+        body: JSON.stringify({
+          user: { anonymous: true },
+          meta: {
+            blob: {
+              requiredXec: product.xec,
+              message: `Verify ${product.xec} XEC to unlock ${product.name}`
+            }
+          }
+        })
       });
-      
-      const data1 = await res1.json();
-      if (!data1.success) throw new Error('Failed to create request');
 
-      // Step 2: Open Xaman
-      window.open(data1.next_url, '_blank');
+      const payloadData = await payloadRes.json();
+      if (!payloadData.uuid) throw new Error('Failed to create payload');
 
-      // Step 3: Poll for verification
-      setUnlockStatus('checking');
-      const interval = setInterval(async () => {
-        const res2 = await fetch('/api/verify-unlock', {
+      // Step 2: Open Xaman app
+      window.open(`https://xaman.app/sign/${payloadData.uuid}`, '_blank');
+
+      // Step 3: Poll for verification result
+      const checkStatus = async () => {
+        const verifyRes = await fetch('/api/verify-unlock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ uuid: data1.uuid, blendSlug: product.slug || window.location.search.split('blend=')[1] })
+          body: JSON.stringify({ uuid: payloadData.uuid, blendSlug: product.slug })
         });
-        const data2 = await res2.json();
 
-        if (data2.unlocked) {
-          clearInterval(interval);
-          setUnlockStatus('unlocked');
-        } else if (data2.success === false || data2.error) {
-          clearInterval(interval);
-          setUnlockStatus('idle');
-        } else if (!data2.unlocked && data2.success) {
-          clearInterval(interval);
-          setLastBalance(data2);
-          setUnlockStatus('insufficient');
+        const result = await verifyRes.json();
+
+        if (result.success) {
+          setXecBalance(result.xecBalance);
+          setUsdValue(result.usdValue);
+          setVerificationState(result.unlocked ? 'unlocked' : 'insufficient');
+        } else {
+          setVerificationState('idle');
+          alert(result.error || 'Verification failed');
+        }
+      };
+
+      // Poll every 3 seconds for up to 60 seconds
+      let attempts = 0;
+      const maxAttempts = 20;
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          await checkStatus();
+          clearInterval(pollInterval);
+        } catch (e) {
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setVerificationState('idle');
+            alert('Verification timed out');
+          }
         }
       }, 3000);
+
     } catch (error) {
-      console.error('Unlock error:', error);
-      alert('Failed to start XEC unlock. Please try again.');
-      setUnlockStatus('idle');
+      console.error('Verification error:', error);
+      setVerificationState('idle');
+      alert('Failed to start verification');
     }
   };
 
@@ -116,31 +140,22 @@ export default function BlendPage() {
         </div>
       </div>
 
-      {/* Value & Pricing */}
-      <section className="py-12 px-6 max-w-4xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-2xl font-bold mb-4">Why Unlock This Blend?</h2>
-            <p className="text-gray-400 mb-4">
-              This isn’t a generic oil mix. It’s an AI-formulated, evidence-informed elixir designed for your specific wellness needs.
-            </p>
-            <p className="text-gray-400">
-              Hold $XEC to unlock:  
-              <br />• Full blend recipe  
-              <br />• Downloadable JSON card  
-              <br />• Option to order physical bottle
-            </p>
-          </div>
-          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
-            <h3 className="text-xl font-bold mb-4">Pricing</h3>
-            <p className="text-gray-400 mb-2">Digital Unlock</p>
-            <p className="text-white text-2xl font-bold">${product.price} • {product.xec} XEC</p>
-            <p className="text-gray-400 mt-4 text-sm">
-              Physical bottles ship in 3–5 days.
-            </p>
-          </div>
+      {/* Blend Preview */}
+      <div className="py-12 px-6 max-w-4xl mx-auto">
+        <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
+          <h2 className="text-2xl font-bold mb-4">Your AI-Curated Blend Includes:</h2>
+          <ul className="text-gray-300 space-y-2">
+            {product.name === 'XE – Everybody’s Oil' && (
+              <>
+                <li>• 10 drops Lavender — calms nerves, reduces inflammation</li>
+                <li>• 8 drops Roman Chamomile — soothes tissue</li>
+                <li>• 6 drops Bergamot FCF — uplifts mood</li>
+              </>
+            )}
+            {/* Add more blends as needed */}
+          </ul>
         </div>
-      </section>
+      </div>
 
       {/* Payment Options */}
       <section className="py-12 px-6 bg-gray-900">
@@ -150,40 +165,40 @@ export default function BlendPage() {
           {/* XEC Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
             <h3 className="text-xl font-bold mb-4 text-turquoise">Pay with $XEC (Recommended)</h3>
-            
-            {unlockStatus === 'checking' ? (
-              <p>Verifying your wallet and XEC balance...</p>
-            ) : unlockStatus === 'unlocked' ? (
-              <div>
-                <p className="text-green-400 mb-4">✅ Unlock successful!</p>
-                <p className="text-gray-300 mb-4">Your full blend recipe is now available in your email or account.</p>
-                <Link
-                  href="/account"
-                  className="inline-block bg-turquoise text-black py-2 px-4 rounded"
-                >
-                  View My Blends
+            <p className="text-gray-400 mb-4">
+              Hold {product.xec} XEC in your Xaman wallet to unlock instantly.
+            </p>
+
+            {verificationState === 'idle' && (
+              <button
+                onClick={handleVerifyWallet}
+                className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-6 rounded font-medium transition"
+              >
+                Verify Wallet →
+              </button>
+            )}
+
+            {verificationState === 'verifying' && (
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+                <span>Checking wallet...</span>
+              </div>
+            )}
+
+            {verificationState === 'unlocked' && (
+              <div className="text-green-400">
+                ✅ Unlocked! You hold {xecBalance.toFixed(2)} XEC (${usdValue.toFixed(2)})
+              </div>
+            )}
+
+            {verificationState === 'insufficient' && (
+              <div className="text-red-400">
+                ❌ Insufficient balance. You hold {xecBalance.toFixed(2)} XEC (${usdValue.toFixed(2)})
+                <br />
+                <Link href="/get-started" className="text-turquoise hover:underline mt-2 inline-block">
+                  Get more XEC →
                 </Link>
               </div>
-            ) : (
-              <>
-                <p className="text-gray-400 mb-4">
-                  Hold {product.xec} XEC ({(product.xec * 0.26 * 2.17).toFixed(2)} USD) to unlock instantly.
-                </p>
-                <button
-                  onClick={handleUnlockWithXec}
-                  disabled={unlockStatus === 'loading'}
-                  className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-6 rounded font-medium transition"
-                >
-                  {unlockStatus === 'loading' ? 'Processing...' : 'Unlock with XEC'}
-                </button>
-                
-                {unlockStatus === 'insufficient' && lastBalance && (
-                  <p className="text-red-400 mt-2 text-sm">
-                    Insufficient balance. You have {lastBalance.xecBalance?.toFixed(0) || 0} XEC (${lastBalance.usdValue?.toFixed(2) || 0}).<br />
-                    <Link href="/get-started" className="text-turquoise hover:underline">Get more XEC →</Link>
-                  </p>
-                )}
-              </>
             )}
           </div>
 
