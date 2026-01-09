@@ -162,40 +162,48 @@ export default function BlendPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center">Unlock With</h2>
           
-          {/* XEC Option */}
+          {/* XEC Option — UPDATED */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
-            <h3 className="text-xl font-bold mb-4 text-turquoise">Pay with $XEC (Recommended)</h3>
+            <h3 className="text-xl font-bold mb-4 text-turquoise">Unlock with $XEC</h3>
             <p className="text-gray-400 mb-4">
-              Hold {product.xec} XEC in your Xaman wallet to unlock instantly.
+              Hold {product.xec} XEC to unlock instantly.
             </p>
 
-            {verificationState === 'idle' && (
+            {/* ✅ TWO ALWAYS-VISIBLE BUTTONS */}
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleVerifyWallet}
-                className="inline-block bg-turquoise hover:bg-teal-400 text-black py-3 px-6 rounded font-medium transition"
+                className="flex-1 bg-turquoise hover:bg-teal-400 text-black py-3 px-4 rounded font-medium transition"
               >
-                Verify Wallet →
+                ✅ Pay with XEC
               </button>
-            )}
+              <Link
+                href="/get-started"
+                className="flex-1 text-center border border-turquoise text-turquoise hover:bg-turquoise/10 py-3 px-4 rounded font-medium transition"
+              >
+                🪙 Get XEC
+              </Link>
+            </div>
 
+            {/* Status Messages */}
             {verificationState === 'verifying' && (
-              <div className="flex items-center gap-2">
+              <div className="mt-4 flex items-center gap-2 text-white">
                 <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
-                <span>Checking wallet...</span>
+                Checking wallet...
               </div>
             )}
 
             {verificationState === 'unlocked' && (
-              <div className="text-green-400">
+              <div className="mt-4 text-green-400">
                 ✅ Unlocked! You hold {xecBalance.toFixed(2)} XEC (${usdValue.toFixed(2)})
               </div>
             )}
 
             {verificationState === 'insufficient' && (
-              <div className="text-red-400">
-                ❌ Insufficient balance. You hold {xecBalance.toFixed(2)} XEC (${usdValue.toFixed(2)})
+              <div className="mt-4 text-red-400">
+                ❌ Insufficient balance. Need {product.xec} XEC.
                 <br />
-                <Link href="/get-started" className="text-turquoise hover:underline mt-2 inline-block">
+                <Link href="/get-started" className="text-turquoise hover:underline mt-1 inline-block">
                   Get more XEC →
                 </Link>
               </div>
