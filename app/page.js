@@ -61,7 +61,7 @@ export default function HomePage() {
       {/* Hero Content */}
       <header className="relative z-10 py-20 md:py-28 px-6 text-center max-w-4xl mx-auto">
         <h1 className="text-4xl md:text-6xl font-bold mb-6 tracking-tight">
-          Your skin deserves more than guesswork.
+          Emotional Creations for your skin with your cellular wellness in mind.
         </h1>
         <p className="text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-10">
           At EmoCreations.skin, our AI doesn’t just blend oils—<br />
