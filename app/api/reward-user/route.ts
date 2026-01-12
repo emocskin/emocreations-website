@@ -2,18 +2,20 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const XAMAN_API_KEY = process.env.XAMAN_API_KEY;
-const XAMAN_API_SECRET = process.env.XAMAN_API_SECRET;
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!XAMAN_API_KEY || !XAMAN_API_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('Missing environment variables');
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
 export async function POST(req: NextRequest) {
+  // ✅ Move env vars inside handler
+  const XAMAN_API_KEY = process.env.XAMAN_API_KEY;
+  const XAMAN_API_SECRET = process.env.XAMAN_API_SECRET;
+  const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!XAMAN_API_KEY || !XAMAN_API_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error('Missing environment variables in reward-user');
+    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
   try {
     const { action_id } = await req.json();
 
@@ -21,8 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'action_id is required' }, { status: 400 });
     }
 
-    // ✅ CORRECT: data → action
-    const {  data: action, error: fetchError } = await supabase
+    const {   action, error: fetchError } = await supabase
       .from('agent_actions')
       .select('*')
       .eq('id', action_id)
