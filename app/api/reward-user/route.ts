@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-const XAMAN_API_KEY = process.env.XAMAN_API_KEY;
+const XAMAN_API_KEY = process. env.XAMAN_API_KEY;
 const XAMAN_API_SECRET = process.env.XAMAN_API_SECRET;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'action_id is required' }, { status: 400 });
     }
 
-    const {  action, error: fetchError } = await supabase
+    // ✅ FIXED: data → action
+    const { data: action, error: fetchError } = await supabase
       .from('agent_actions')
       .select('*')
       .eq('id', action_id)
@@ -79,8 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     // === LOG EXPENSE ===
-    // Get current XEC price in USD (use fallback if Coingecko fails)
-    let xecUsd = 0.26 * 2.17; // fallback
+    let xecUsd = 0.26 * 2.17;
     try {
       const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=xrp&vs_currencies=usd');
       if (cgRes.ok) {
