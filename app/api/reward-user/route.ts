@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  // ✅ Move env vars inside handler
   const XAMAN_API_KEY = process.env.XAMAN_API_KEY;
   const XAMAN_API_SECRET = process.env.XAMAN_API_SECRET;
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -23,11 +22,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'action_id is required' }, { status: 400 });
     }
 
-    const {   action, error: fetchError } = await supabase
+    // ✅ SAFE: Use .data instead of destructuring
+    const result = await supabase
       .from('agent_actions')
       .select('*')
       .eq('id', action_id)
       .single();
+
+    const action = result.data;
+    const fetchError = result.error;
 
     if (fetchError || !action) {
       return NextResponse.json({ error: 'Action not found' }, { status: 404 });
