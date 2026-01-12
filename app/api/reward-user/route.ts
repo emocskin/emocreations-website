@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'action_id is required' }, { status: 400 });
     }
 
-    const {  action, error: fetchError } = await supabase
+    // ✅ CORRECT: data → action
+    const {  data: action, error: fetchError } = await supabase
       .from('agent_actions')
       .select('*')
       .eq('id', action_id)
