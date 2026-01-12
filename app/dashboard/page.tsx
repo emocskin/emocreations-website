@@ -78,8 +78,20 @@ export default function DashboardOverview() {
         />
       </div>
 
+      {/* P&L Summary Widget */}
+      <div className="mt-8 bg-gray-900 p-6 rounded-2xl">
+        <h2 className="text-xl font-bold mb-4">Profit & Loss (Last 30 Days)</h2>
+        <PnLWidget />
+      </div>
+
+      {/* Xaman Live Payloads Widget */}
+      <div className="mt-8 bg-gray-900 p-6 rounded-2xl">
+        <h2 className="text-xl font-bold mb-4">Live Xaman Payloads</h2>
+        <XamanPayloadWidget />
+      </div>
+
       {/* Quick Actions */}
-      <div className="bg-gray-900 p-6 rounded-2xl">
+      <div className="mt-8 bg-gray-900 p-6 rounded-2xl">
         <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link 
@@ -129,6 +141,8 @@ export default function DashboardOverview() {
   );
 }
 
+// === Reusable Components ===
+
 function StatCard({ title, value, href }: { title: string; value: number; href: string }) {
   return (
     <Link href={href} className="block">
@@ -151,6 +165,123 @@ function StatusItem({ name, status }: { name: string; status: string }) {
       }`}>
         {status}
       </span>
+    </div>
+  );
+}
+
+// === P&L Widget ===
+async function fetchPnLSummary() {
+  const res = await fetch('/api/pnl-summary');
+  if (!res.ok) throw new Error('Failed to fetch P&L');
+  return res.json();
+}
+
+function PnLWidget() {
+  const [pnl, setPnl] = useState({ revenue: 0, expenses: 0, profit: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadPnL = async () => {
+      try {
+        const data = await fetchPnLSummary();
+        setPnl(data);
+      } catch (e) {
+        console.error('P&L fetch error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadPnL();
+    const interval = setInterval(loadPnL, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  if (loading) {
+    return <p className="text-gray-400">Loading P&L...</p>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <p className="text-gray-400 text-sm">Revenue</p>
+        <p className="text-green-400 font-bold">${pnl.revenue.toFixed(2)}</p>
+      </div>
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <p className="text-gray-400 text-sm">Expenses</p>
+        <p className="text-red-400 font-bold">${pnl.expenses.toFixed(2)}</p>
+      </div>
+      <div className="bg-gray-800 p-4 rounded-lg">
+        <p className="text-gray-400 text-sm">Profit</p>
+        <p className={`font-bold ${pnl.profit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          ${pnl.profit.toFixed(2)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// === Xaman Payload Widget ===
+async function fetchXamanPayloads() {
+  const res = await fetch('/api/xaman-payloads');
+  if (!res.ok) throw new Error('Failed to fetch payloads');
+  const data = await res.json();
+  return data.slice(0, 5).sort((a: any, b: any) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+}
+
+function XamanPayloadWidget() {
+  const [payloads, setPayloads] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPayloads = async () => {
+      try {
+        const data = await fetchXamanPayloads();
+        setPayloads(data);
+      } catch (e) {
+        console.error('Payload fetch error:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPayloads();
+    const interval = setInterval(fetchPayloads, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const getStatusColor = (status: string) => {
+    if (status === 'signed') return 'text-green-400';
+    if (status === 'expired') return 'text-red-400';
+    return 'text-yellow-400';
+  };
+
+  return (
+    <div className="space-y-3 max-h-80 overflow-y-auto">
+      {loading ? (
+        <p className="text-gray-400">Loading payloads...</p>
+      ) : payloads.length === 0 ? (
+        <p className="text-gray-500">No recent payloads</p>
+      ) : (
+        payloads.map((p) => {
+          const status = p.meta?.blob?.status || 'pending';
+          const account = p.response?.account || '—';
+          return (
+            <div key={p.uuid} className="bg-gray-800 p-3 rounded-lg text-sm">
+              <div className="flex justify-between">
+                <span className={`font-mono ${getStatusColor(status)}`}>
+                  {status}
+                </span>
+                <span className="text-gray-400">
+                  {new Date(p.created_at).toLocaleTimeString()}
+                </span>
+              </div>
+              <p className="font-mono text-white truncate mt-1">{p.uuid}</p>
+              <p className="text-gray-300 text-xs mt-1">Account: {account}</p>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }

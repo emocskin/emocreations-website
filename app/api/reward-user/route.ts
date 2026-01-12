@@ -2,28 +2,32 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const XAMAN_API_KEY = process.env.XAMAN_API_KEY;
+const XAMAN_API_SECRET = process.env.XAMAN_API_SECRET;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!XAMAN_API_KEY || !XAMAN_API_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error('Missing environment variables');
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 export async function POST(req: NextRequest) {
   try {
     const { action_id } = await req.json();
 
     if (!action_id) {
-      return NextResponse.json({ error: 'Missing action_id' }, { status: 400 });
+      return NextResponse.json({ error: 'action_id is required' }, { status: 400 });
     }
 
-    // Fetch action from Supabase
-    const { data: action, error } = await supabase
+    const {  action, error: fetchError } = await supabase
       .from('agent_actions')
       .select('*')
       .eq('id', action_id)
       .single();
 
-    if (error || !action) {
+    if (fetchError || !action) {
       return NextResponse.json({ error: 'Action not found' }, { status: 404 });
     }
 
@@ -31,59 +35,70 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Already processed' }, { status: 400 });
     }
 
-    const xamanAddress = action.user_identifier;
-
-    // Validate XRPL address
-    if (!xamanAddress || !xamanAddress.startsWith('r')) {
+    const xrplAddress = action.user_identifier;
+    if (!xrplAddress || !xrplAddress.startsWith('r')) {
       await supabase
         .from('agent_actions')
-        .update({ 
-          status: 'failed', 
-          meta: { error: 'Invalid XRPL address' } 
-        })
+        .update({ status: 'failed', meta: { ...action.meta, error: 'Invalid XRPL address' } })
         .eq('id', action.id);
       return NextResponse.json({ error: 'Invalid XRPL address' }, { status: 400 });
     }
 
-    // === SEND XEC VIA XAMAN WEBHOOK ===
+    // === SEND XEC VIA XAMAN ===
     const payload = {
+      user: { identifier: xrplAddress },
       transaction: {
-        Destination: xamanAddress,
+        Destination: xrplAddress,
         Amount: {
           currency: 'XEC',
           issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX',
           value: action.xec_amount.toString(),
         },
       },
-      options: {
-        memo: 'Reward for social share • EmoCreations.skin',
-      },
+      options: { memo: `Reward for ${action.action_type} • EmoCreations.skin` },
     };
 
-    const xamanRes = await fetch(
-      `https://xaman.app/api/v1/business/${process.env.XAMAN_BUSINESS_ID}/payload`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': process.env.XAMAN_API_KEY!,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    const xamanRes = await fetch('https://xaman.app/api/v2/payload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': XAMAN_API_KEY,
+        'X-API-Secret': XAMAN_API_SECRET,
+      },
+      body: JSON.stringify(payload),
+    });
 
     const xamanData = await xamanRes.json();
 
     if (!xamanRes.ok || xamanData.error) {
       await supabase
         .from('agent_actions')
-        .update({ 
-          status: 'failed', 
-          meta: { xaman_error: xamanData } 
-        })
+        .update({ status: 'failed', meta: { ...action.meta, xaman_error: xamanData } })
         .eq('id', action.id);
       return NextResponse.json({ error: 'Xaman send failed' }, { status: 500 });
     }
+
+    // === LOG EXPENSE ===
+    // Get current XEC price in USD (use fallback if Coingecko fails)
+    let xecUsd = 0.26 * 2.17; // fallback
+    try {
+      const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=xrp&vs_currencies=usd');
+      if (cgRes.ok) {
+        const prices = await cgRes.json();
+        xecUsd = 0.26 * prices.xrp.usd;
+      }
+    } catch (e) {
+      console.warn('Using fallback XEC price for expense logging');
+    }
+
+    const expenseAmount = action.xec_amount * xecUsd;
+    await supabase.from('financial_transactions').insert({
+      type: 'expense',
+      category: 'marketing_reward',
+      amount_usd: parseFloat(expenseAmount.toFixed(2)),
+      description: `XEC reward: ${action.action_type}`,
+      related_id: action.id
+    });
 
     // Mark as sent
     await supabase
@@ -98,6 +113,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, txid: xamanData.txid });
   } catch (error) {
     console.error('Reward error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
