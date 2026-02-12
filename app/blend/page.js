@@ -1,6 +1,9 @@
 // app/blend/page.js
 'use client';
 
+// ✅ CRITICAL: Force dynamic rendering to avoid build-time errors
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
@@ -40,7 +43,7 @@ export default function BlendPage() {
     setVerificationState('verifying');
 
     try {
-      // ✅ FIXED: Removed extra spaces in URL
+      // ✅ FIXED: No extra spaces in URL
       const payloadRes = await fetch('https://xaman.app/api/v2/payload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,7 +61,7 @@ export default function BlendPage() {
       const payloadData = await payloadRes.json();
       if (!payloadData.uuid) throw new Error('Failed to create payload');
 
-      // ✅ FIXED: Removed extra spaces in URL
+      // ✅ FIXED: No extra spaces in URL
       window.open(`https://xaman.app/sign/${payloadData.uuid}`, '_blank');
 
       const checkStatus = async () => {
@@ -282,4 +285,3 @@ export default function BlendPage() {
     </div>
   );
 }
-// Thu Feb 12 05:16:06 AM PST 2026
