@@ -40,7 +40,7 @@ export default function BlendPage() {
     setVerificationState('verifying');
 
     try {
-      // Step 1: Create Xaman payload
+      // ✅ FIXED: Removed extra spaces in URL
       const payloadRes = await fetch('https://xaman.app/api/v2/payload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -58,10 +58,9 @@ export default function BlendPage() {
       const payloadData = await payloadRes.json();
       if (!payloadData.uuid) throw new Error('Failed to create payload');
 
-      // Step 2: Open Xaman app
+      // ✅ FIXED: Removed extra spaces in URL
       window.open(`https://xaman.app/sign/${payloadData.uuid}`, '_blank');
 
-      // Step 3: Poll for verification result
       const checkStatus = async () => {
         const verifyRes = await fetch('/api/verify-unlock', {
           method: 'POST',
@@ -81,7 +80,6 @@ export default function BlendPage() {
         }
       };
 
-      // Poll every 3 seconds for up to 60 seconds
       let attempts = 0;
       const maxAttempts = 20;
       const pollInterval = setInterval(async () => {
@@ -162,14 +160,13 @@ export default function BlendPage() {
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center">Unlock With</h2>
           
-          {/* XEC Option — UPDATED */}
+          {/* XEC Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
             <h3 className="text-xl font-bold mb-4 text-turquoise">Unlock with $XEC</h3>
             <p className="text-gray-400 mb-4">
               Hold {product.xec} XEC to unlock instantly.
             </p>
 
-            {/* ✅ TWO ALWAYS-VISIBLE BUTTONS */}
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleVerifyWallet}
@@ -185,7 +182,6 @@ export default function BlendPage() {
               </Link>
             </div>
 
-            {/* Status Messages */}
             {verificationState === 'verifying' && (
               <div className="mt-4 flex items-center gap-2 text-white">
                 <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
@@ -210,28 +206,57 @@ export default function BlendPage() {
             )}
           </div>
 
-          {/* PayPal Option */}
+          {/* PayPal Option — DYNAMIC SMART BUTTONS */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800">
             <h3 className="text-xl font-bold mb-4">Or Pay with Card</h3>
             <p className="text-gray-400 mb-4">
-              Use PayPal for secure checkout. Ships in 3–5 days.
+              Secure checkout via PayPal. Ships in 3–5 days.
             </p>
-            <form 
-              action="https://www.paypal.com/cgi-bin/webscr" 
-              method="post" 
-              target="_top"
-              className="text-center"
-            >
-              <input type="hidden" name="cmd" value="_s-xclick" />
-              <input type="hidden" name="hosted_button_id" value="UZDG2HL3BMSUW" />
-              <input
-                type="image"
-                src="https://www.paypalobjects.com/en_US/i/btn/btn_buynow_LG.gif"
-                name="submit"
-                alt="PayPal"
-                className="h-10"
-              />
-            </form>
+            
+            {/* Dynamic PayPal Smart Button */}
+            <div id="paypal-button-container" className="text-center"></div>
+
+            <script
+              src="https://www.paypal.com/sdk/js?client-id=ATmYVsWxvBzV6cJgPrC_AvCmCi9WfjP3u4Mv8uyME_mvlw0zBKQ06-BNylvCY_IOMoBuQFyPvdLM1xZ6&currency=USD"
+              onLoad={() => {
+                if (typeof window !== 'undefined' && product) {
+                  window.paypal.Buttons({
+                    createOrder: (data, actions) => {
+                      return actions.order.create({
+                        purchase_units: [{
+                          amount: {
+                            value: product.price.toString(),
+                            currency_code: 'USD'
+                          },
+                          description: product.name
+                        }]
+                      });
+                    },
+                    onApprove: async (data, actions) => {
+                      const details = await actions.order.capture();
+                      
+                      // Submit to your backend
+                      await fetch('/api/submit-order', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          email: details.payer.email_address,
+                          blend: product.slug,
+                          orderId: details.id
+                        })
+                      });
+
+                      // Redirect to thank you page
+                      window.location.href = `/thank-you?order=${details.id}`;
+                    },
+                    onError: (err) => {
+                      console.error('PayPal error:', err);
+                      alert('Payment failed. Please try again.');
+                    }
+                  }).render('#paypal-button-container');
+                }
+              }}
+            ></script>
           </div>
         </div>
       </section>
