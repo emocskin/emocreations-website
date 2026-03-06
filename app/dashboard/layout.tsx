@@ -5,8 +5,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 // Simple auth: check for DASHBOARD_TOKEN cookie
+// ✅ Layout is already async - now we await cookies()
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const cookieStore = cookies();
+  // ✅ FIX: Await the Promise returned by cookies() in Next.js 16
+  const cookieStore = await cookies();
   const token = cookieStore.get('DASHBOARD_TOKEN')?.value;
 
   // Replace with your secret token

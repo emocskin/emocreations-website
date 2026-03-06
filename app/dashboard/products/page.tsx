@@ -12,10 +12,11 @@ const supabase = createClient(
 // ✅ Define types explicitly
 type ProductTier = 'entry' | 'signature' | 'premium' | 'ultra_premium';
 
+// ✅ FIX: Make ProductSize fields optional (?) since form inputs can be empty during editing
 type ProductSize = {
-  size_label: string;
-  usd_price: number;
-  xec_amount: number;
+  size_label?: string;
+  usd_price?: number;
+  xec_amount?: number;
 };
 
 type Product = {
@@ -65,7 +66,7 @@ export default function ProductsPage() {
     setForm({
       name: product.name,
       slug: product.slug,
-      tier: product.tier, // ✅ Now compatible: both are ProductTier
+      tier: product.tier,
       sizes: product.sizes,
     });
   };
@@ -82,16 +83,31 @@ export default function ProductsPage() {
     setForm({ ...form, sizes: newSizes });
   };
 
+  // ✅ FIX: Properly type the handleSizeChange function to satisfy TypeScript
   const handleSizeChange = (index: number, field: keyof ProductSize, value: string | number) => {
     const newSizes = [...form.sizes];
-    newSizes[index] = { ...newSizes[index], [field]: value };
+    
+    // ✅ Type-safe assignment using conditional logic
+    if (field === 'size_label' && typeof value === 'string') {
+      newSizes[index] = { ...newSizes[index], size_label: value };
+    } else if (field === 'usd_price' && typeof value === 'number') {
+      newSizes[index] = { ...newSizes[index], usd_price: value };
+    } else if (field === 'xec_amount' && typeof value === 'number') {
+      newSizes[index] = { ...newSizes[index], xec_amount: value };
+    }
+    
     setForm({ ...form, sizes: newSizes });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.name || !form.slug || form.sizes.length === 0) {
+    // ✅ Validate that all required fields are filled before submitting
+    const hasEmptySizes = form.sizes.some(size => 
+      !size.size_label || size.usd_price == null || size.xec_amount == null
+    );
+    
+    if (!form.name || !form.slug || form.sizes.length === 0 || hasEmptySizes) {
       alert('Please fill all required fields');
       return;
     }
@@ -189,7 +205,7 @@ export default function ProductsPage() {
                   <input
                     type="text"
                     placeholder="Size (e.g., Roller, 3 oz)"
-                    value={size.size_label}
+                    value={size.size_label || ''}
                     onChange={(e) => handleSizeChange(index, 'size_label', e.target.value)}
                     className="p-2 bg-black border border-gray-800 rounded flex-1"
                     required
@@ -197,7 +213,7 @@ export default function ProductsPage() {
                   <input
                     type="number"
                     placeholder="USD Price"
-                    value={size.usd_price || ''}
+                    value={size.usd_price ?? ''}
                     onChange={(e) => handleSizeChange(index, 'usd_price', parseFloat(e.target.value) || 0)}
                     className="p-2 bg-black border border-gray-800 rounded w-24"
                     required
@@ -205,7 +221,7 @@ export default function ProductsPage() {
                   <input
                     type="number"
                     placeholder="XEC Amount"
-                    value={size.xec_amount || ''}
+                    value={size.xec_amount ?? ''}
                     onChange={(e) => handleSizeChange(index, 'xec_amount', parseInt(e.target.value) || 0)}
                     className="p-2 bg-black border border-gray-800 rounded w-24"
                     required
@@ -270,8 +286,8 @@ export default function ProductsPage() {
                     <div className="mt-2">
                       {product.sizes.map((size, i) => (
                         <span key={i} className="inline-block mr-3 text-sm">
-                          <span className="text-turquoise">{size.size_label}</span>: $
-                          {size.usd_price} • {size.xec_amount} XEC
+                          <span className="text-turquoise">{size.size_label || 'N/A'}</span>: $
+                          {size.usd_price ?? 0} • {size.xec_amount ?? 0} XEC
                         </span>
                       ))}
                     </div>

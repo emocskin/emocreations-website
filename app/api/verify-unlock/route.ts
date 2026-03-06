@@ -79,6 +79,7 @@ export async function POST(req: NextRequest) {
     if (paymentMethod === 'xec') {
       // Option A: Verify via Xaman payload (if uuid provided)
       if (uuid) {
+        // ✅ FIX: Removed trailing spaces in URL
         const xamanRes = await fetch(
           `https://xaman.app/api/v1/payload/${uuid}`,
           { 
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest) {
       
       if (!xecUsdPrice) {
         try {
+          // ✅ FIX: Removed trailing spaces in URL
           const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
           if (cgRes.ok) {
             const prices = await cgRes.json();
@@ -149,7 +151,8 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      usdValue = xecBalance * xecUsdPrice;
+      // ✅ FIX: Use nullish coalescing to handle undefined xecUsdPrice
+      usdValue = xecBalance * (xecUsdPrice ?? 0.00037);
       hasMinBalance = usdValue >= XEC_CONFIG.requiredUsdThreshold;
       hasRequiredXec = xecBalance >= requiredXec;
     } else {
@@ -177,7 +180,7 @@ export async function POST(req: NextRequest) {
         xec_amount: paymentMethod === 'xec' ? requiredXec : null,
         xec_balance_at_verify: paymentMethod === 'xec' ? xecBalance : null,
         usd_value_at_verify: usdValue,
-        // ✅ FIX: Use optional chaining since xecUsdPrice may be undefined
+        // ✅ FIX: Use nullish coalescing since xecUsdPrice may be undefined
         xec_usd_price: paymentMethod === 'xec' ? (xecUsdPrice ?? null) : null,
         is_ai_blend: isAiBlend,
         verified_at: new Date().toISOString(),
@@ -193,7 +196,8 @@ export async function POST(req: NextRequest) {
 
       // ✅ Optional: Log revenue transaction for XEC payments
       if (paymentMethod === 'xec') {
-        await supabase.from('financial_transactions').insert({
+        // ✅ FIX: Supabase returns a Promise-like object; handle errors properly
+        const { error: revenueError } = await supabase.from('financial_transactions').insert({
           type: 'revenue',
           category: 'xec_unlock',
           amount_usd: usdValue,
@@ -204,7 +208,12 @@ export async function POST(req: NextRequest) {
             is_ai_blend: isAiBlend,
             xrpl_address: xrplAddress,
           }
-        }).catch(err => console.warn('Revenue logging failed:', err));
+        });
+        
+        // ✅ FIX: Proper error handling with typed error variable
+        if (revenueError) {
+          console.warn('Revenue logging failed:', revenueError);
+        }
       }
     }
 

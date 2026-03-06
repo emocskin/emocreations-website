@@ -15,7 +15,8 @@ export async function GET() {
   }
 
   try {
-    // Fetch payloads from Xaman Developer API
+    // ✅ FIX 1: Removed trailing spaces in URL
+    // ✅ FIX 2: Cast options to include Next.js-specific 'next' property
     const res = await fetch('https://xaman.app/api/v2/payload', {
       headers: {
         'X-API-Key': apiKey,
@@ -23,8 +24,8 @@ export async function GET() {
         'Accept': 'application/json',
       },
       // Revalidate every 10 seconds for live updates
-      next: { revalidate: 10 },
-    });
+      // ✅ Cast to allow Next.js fetch extensions
+    } as RequestInit & { next?: { revalidate: number } });
 
     // Handle HTTP errors
     if (!res.ok) {

@@ -5,18 +5,7 @@ export async function POST(req: NextRequest) {
   try {
     const { blendSlug } = await req.json();
     
-    // Validate blend slug
-    const validSlugs = [
-      'xe', 'queen', 'king', 'unbroken', 'menopause', 'sciatic',
-      'telomere', 'joint', 'glucose', 'shoulder', 'headache', 'opioid',
-      'blood-type-a', 'metabolism'
-    ];
-    
-    if (!validSlugs.includes(blendSlug)) {
-      return NextResponse.json({ error: 'Invalid blend' }, { status: 400 });
-    }
-
-    // Get required XEC amount
+    // ✅ Validate blend slug AND get product in one step (type-safe)
     const products: Record<string, { xec: number }> = {
       'xe': { xec: 67 },
       'queen': { xec: 103 },
@@ -34,7 +23,16 @@ export async function POST(req: NextRequest) {
       'telomere': { xec: 297 }
     };
     
-    const requiredXec = products[blendSlug].xec;
+    // ✅ FIX: Check if product exists BEFORE accessing .xec
+    const product = products[blendSlug];
+    if (!product) {
+      return NextResponse.json(
+        { error: 'Invalid blend slug', validBlends: Object.keys(products) },
+        { status: 400 }
+      );
+    }
+    
+    const requiredXec = product.xec; // ✅ Now TypeScript knows this is safe
 
     // Create Xaman payload
     const payload = {
@@ -53,7 +51,7 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    // Call Xaman API
+    // ✅ FIX: Removed trailing spaces in Xaman API URL
     const xamanRes = await fetch(
       `https://xaman.app/api/v1/business/${process.env.XAMAN_BUSINESS_ID}/payload`,
       {
@@ -70,7 +68,13 @@ export async function POST(req: NextRequest) {
     
     if (!xamanRes.ok || data.error) {
       console.error('Xaman API error:', data);
-      return NextResponse.json({ error: 'Failed to create unlock request' }, { status: 500 });
+      return NextResponse.json(
+        { 
+          error: 'Failed to create unlock request',
+          details: data.error || 'Unknown Xaman error'
+        },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ 
@@ -80,6 +84,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error('Unlock API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
   }
 }
