@@ -1,14 +1,14 @@
 [[ISSUERS]]
 address = "rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX"
-name = "EmoCreations.skin - XEC"
+name = "EmoCreations.skin"
 
 [[TOKENS]]
 issuer = "rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX"
 currency = "XEC"
 name = "XEC"
-desc = "XEC (XEC) At EmoCreations.skin, our AI doesn’t just blend oils—
+desc = "EmoCreations.skin - XEC, our AI doesn’t just blend oils —
 it studies the science of synergy to create intelligent, evidence-informed elixirs that honor your skin’s innate intelligence. ."
-icon = "https://"
+icon = "https://emocreations.skin/public/xec-logo.png"
 image = "https://emocreations.skin/public/xec-logo.png"
 
 [[TOKENS.URLS]]
