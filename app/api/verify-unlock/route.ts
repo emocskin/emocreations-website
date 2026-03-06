@@ -67,9 +67,11 @@ export async function POST(req: NextRequest) {
     
     const requiredXec = body.requiredXec || Math.ceil(basePriceUsd / 0.37); // Fallback calc
 
+    // ✅ FIX: Declare xecUsdPrice at function scope so it's always defined
     let xrplAddress = walletAddress;
     let xecBalance = 0;
     let usdValue = 0;
+    let xecUsdPrice: number | undefined; // ✅ Declared at top level
     let hasMinBalance = false;
     let hasRequiredXec = false;
 
@@ -77,7 +79,6 @@ export async function POST(req: NextRequest) {
     if (paymentMethod === 'xec') {
       // Option A: Verify via Xaman payload (if uuid provided)
       if (uuid) {
-        // ✅ FIXED: Removed trailing spaces in URL
         const xamanRes = await fetch(
           `https://xaman.app/api/v1/payload/${uuid}`,
           { 
@@ -133,11 +134,10 @@ export async function POST(req: NextRequest) {
       }
 
       // ✅ STEP 3: Get accurate XEC USD price
-      let xecUsdPrice = xecPriceOverride;
+      xecUsdPrice = xecPriceOverride;
       
       if (!xecUsdPrice) {
         try {
-          // ✅ FIXED: Removed trailing spaces + use ecash ID for XEC
           const cgRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
           if (cgRes.ok) {
             const prices = await cgRes.json();
@@ -157,26 +157,28 @@ export async function POST(req: NextRequest) {
       hasMinBalance = true;
       hasRequiredXec = true;
       usdValue = basePriceUsd;
+      xecUsdPrice = undefined; // ✅ Explicitly undefined for non-XEC payments
     }
 
     // ✅ STEP 4: Determine unlock status
     const unlocked = hasMinBalance && hasRequiredXec;
 
-    // ✅ STEP 5: Log verification/unlock event (supports AI blends + both payment methods)
+    // ✅ STEP 5: Log verification/unlock event
     if (unlocked) {
       const unlockRecord = {
         xrpl_address: xrplAddress || null,
         blend_slug: blendSlug,
         blend_name: blendName || null,
         blend_description: blendDescription || null,
-        blend_recipe: blendRecipe || null, // JSONB: [{oil, drops, purpose}, ...]
+        blend_recipe: blendRecipe || null,
         blend_instructions: blendInstructions || null,
         user_prompt: userPrompt || null,
         payment_method: paymentMethod,
         xec_amount: paymentMethod === 'xec' ? requiredXec : null,
         xec_balance_at_verify: paymentMethod === 'xec' ? xecBalance : null,
         usd_value_at_verify: usdValue,
-        xec_usd_price: xecUsdPrice || null,
+        // ✅ FIX: Use optional chaining since xecUsdPrice may be undefined
+        xec_usd_price: paymentMethod === 'xec' ? (xecUsdPrice ?? null) : null,
         is_ai_blend: isAiBlend,
         verified_at: new Date().toISOString(),
       };
@@ -187,7 +189,6 @@ export async function POST(req: NextRequest) {
 
       if (unlockError) {
         console.warn('Unlock logging failed (non-critical):', unlockError);
-        // Don't fail the response if logging fails
       }
 
       // ✅ Optional: Log revenue transaction for XEC payments
@@ -218,7 +219,7 @@ export async function POST(req: NextRequest) {
         slug: blendSlug,
         name: blendName,
         isAi: isAiBlend,
-        recipe: unlocked && isAiBlend ? blendRecipe : undefined, // Only send recipe if unlocked
+        recipe: unlocked && isAiBlend ? blendRecipe : undefined,
       },
       message: unlocked 
         ? (isAiBlend ? '✨ AI blend unlocked!' : 'Blend unlocked!') 
