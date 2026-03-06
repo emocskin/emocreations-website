@@ -4,11 +4,12 @@
 // ✅ CRITICAL: Force dynamic rendering to avoid caching sensitive blend data
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react'; // ✅ Added Suspense import
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-export default function BlendDeliveryPage() {
+// ✅ Extract main logic into child component (safe to use useSearchParams inside)
+function BlendDeliveryContent() {
   const searchParams = useSearchParams();
   const [blend, setBlend] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -320,5 +321,20 @@ export default function BlendDeliveryPage() {
         </p>
       </section>
     </div>
+  );
+}
+
+// ✅ FIX: Default export wraps content in Suspense boundary
+export default function BlendDeliveryPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6">
+        <div className="w-12 h-12 border-4 border-turquoise border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-lg text-gray-300">Loading blend...</p>
+        <p className="text-sm text-gray-500 mt-2">This may take a few seconds</p>
+      </div>
+    }>
+      <BlendDeliveryContent />
+    </Suspense>
   );
 }
