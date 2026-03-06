@@ -1,0 +1,48 @@
+[[ISSUERS]]
+address = "rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX"
+name = "EmoCreations.skin - XEC"
+
+[[TOKENS]]
+issuer = "rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX"
+currency = "XEC"
+name = "XEC"
+desc = "XEC (XEC) At EmoCreations.skin, our AI doesn’t just blend oils—
+it studies the science of synergy to create intelligent, evidence-informed elixirs that honor your skin’s innate intelligence. ."
+icon = "https://"
+image = "https://emocreations.skin/public/xec-logo.png"
+
+[[TOKENS.URLS]]
+url = "https://emocreations.skin"
+type = "website"
+
+[[TOKENS.URLS]]
+url = "https://x.com/EmoCreationSkin"
+type = "social"
+
+[[TOKENS.URLS]]
+url = "https://instagram.com/emocreations.skin"
+type = "social"
+
+[[TOKENS.URLS]]
+url = "https://youtube.com/emocskin-xec"
+type = "social"
+
+[[TOKENS.URLS]]
+url = "https://facebook.com/EmoCreations.skin"
+type = "social"
+
+[[TOKENS.URLS]]
+url = "https://t.me/EmoCreationSkin"
+type = "social"
+
+[[TOKENS.URLS]]
+url = "https://xpmarket.com/token/XEC-rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX"
+type = "social"
+
+[[PRINCIPALS]]
+name = "Franz C. aka xecking"
+email = "emoc.xec@gmail.com"
+
+
+
+
