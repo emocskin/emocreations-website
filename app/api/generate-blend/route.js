@@ -2,7 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-// ✅ NEW: Rate limiting imports
+// ✅ Rate limiting imports
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
@@ -13,7 +13,6 @@ const supabase = createClient(
 );
 
 // ✅ Poe/OpenAI client - SERVER-SIDE ONLY (API key secure)
-// ✅ FIXED: Removed trailing spaces from baseURL
 const poeClient = process.env.POE_API_KEY 
   ? new OpenAI({
       apiKey: process.env.POE_API_KEY,
@@ -33,7 +32,7 @@ const getRatelimit = () => {
       redis,
       // ✅ Launch-friendly limits: 10 AI requests per 60 seconds per IP
       limiter: Ratelimit.slidingWindow(10, '60 s'),
-      analytics: true, // Enable usage analytics in Upstash dashboard
+      analytics: true,
       prefix: 'emocreations:blend-gen',
     });
   }
@@ -106,7 +105,6 @@ const BASE_OILS = {
 // ✅ Helper: Transform rule-based oils to frontend format
 function transformOilsToRecipe(oils) {
   return oils.map(oil => {
-    // Parse "10 drops" → 10
     const drops = parseInt(oil.amount) || 10;
     return {
       oil: oil.name,
@@ -229,21 +227,20 @@ export async function POST(request) {
     
     // ✅ Support BOTH rule-based and AI inputs
     const {
-      condition,           // Rule-based: 'stress', 'headache', etc.
-      scentPreference,     // Rule-based: 'citrus', 'floral', etc.
-      skinType,            // Rule-based: 'normal', 'dry', etc.
-      userInput,           // AI: free-text description
-      useAI = false        // Flag to force AI generation
+      condition,
+      scentPreference,
+      skinType,
+      userInput,
+      useAI = false
     } = body;
 
-    // ✅ RATE LIMIT CHECK: Only apply to AI requests (rule-based are free/instant)
+    // ✅ RATE LIMIT CHECK: Only apply to AI requests
     const isAiRequest = useAI || (userInput && userInput.length > 30);
     
     if (isAiRequest) {
       const limiter = getRatelimit();
       
       if (limiter) {
-        // Get user IP (works with Vercel proxy headers)
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0] 
                  || request.headers.get('x-real-ip') 
                  || 'anonymous';
@@ -251,17 +248,21 @@ export async function POST(request) {
         const { success, limit, reset, remaining } = await limiter.limit(ip);
         
         if (!success) {
-          // ✅ Optional: Log rate limit hit to Supabase for analytics
+          // ✅ FIXED: Proper Supabase error handling (no .catch())
           if (supabase) {
-            await supabase.from('rate_limit_events').insert({
-              ip: ip.slice(0, 45), // Truncate for privacy
+            const { error: rateLimitError } = await supabase.from('rate_limit_events').insert({
+              ip: ip.slice(0, 45),
               endpoint: '/api/generate-blend',
-              limit,
+              rate_limit: limit,
               remaining: 0,
               reset_at: new Date(reset).toISOString(),
               user_agent: request.headers.get('user-agent')?.slice(0, 200),
               created_at: new Date().toISOString()
-            }).catch(err => console.warn('Rate limit logging failed:', err));
+            });
+            
+            if (rateLimitError) {
+              console.warn('Rate limit logging failed:', rateLimitError);
+            }
           }
           
           return NextResponse.json(
@@ -288,7 +289,7 @@ export async function POST(request) {
     let generationMethod = 'rule-based';
     let blendId;
 
-    // ✅ Option 1: Poe AI generation (if requested or no matching condition)
+    // ✅ Option 1: Poe AI generation
     if (isAiRequest) {
       try {
         generationMethod = 'poe-ai';
@@ -296,7 +297,6 @@ export async function POST(request) {
         blendId = blendData.slug || `ai-${Date.now()}`;
       } catch (aiError) {
         console.warn('AI generation failed, falling back to rule-based:', aiError);
-        // Fall through to rule-based below
         generationMethod = 'rule-based-fallback';
       }
     }
@@ -306,7 +306,6 @@ export async function POST(request) {
       const selectedCondition = condition || 'default';
       const oils = ESSENTIAL_OILS[selectedCondition] || ESSENTIAL_OILS.default;
       
-      // Adjust for scent preference (simplified)
       let adjustedOils = oils;
       if (scentPreference === 'citrus') {
         adjustedOils = oils.map(oil => 
@@ -317,11 +316,10 @@ export async function POST(request) {
 
       const { price, xec } = calculatePricing(adjustedOils);
       
-      // ✅ Transform to frontend-expected format
       blendData = {
         name: getBlendName(selectedCondition, userInput),
         description: getBenefits(selectedCondition, userInput),
-        recipe: transformOilsToRecipe(adjustedOils), // ✅ [{oil, drops, purpose}]
+        recipe: transformOilsToRecipe(adjustedOils),
         instructions: getInstructions(selectedCondition),
         notes: getNotes(selectedCondition),
         baseOil: BASE_OILS[skinType] || BASE_OILS.normal,
@@ -333,31 +331,36 @@ export async function POST(request) {
       blendId = blendData.slug;
     }
 
-    // ✅ Log to Supabase for analytics + agent training
+    // ✅ FIXED: Proper Supabase logging (no .catch())
     if (supabase) {
-      await supabase.from('access_logs').insert({
+      const { error: logError } = await supabase.from('access_logs').insert({
         action: 'blend_generated',
         method: generationMethod,
         payload: {
           condition,
           scentPreference,
           skinType,
-          userInput: userInput?.slice(0, 200), // Truncate for privacy
+          userInput: userInput?.slice(0, 200),
           blendId,
           oilCount: blendData.recipe?.length || 0,
           price: blendData.price,
           xec: blendData.xec
         },
         created_at: new Date().toISOString()
-      }).catch(err => console.warn('Supabase logging failed:', err));
+      });
+      
+      if (logError) {
+        console.warn('Supabase logging failed:', logError);
+        // Don't fail the response if logging fails
+      }
     }
 
-    // ✅ Add rate limit headers to successful responses (if limiter exists)
+    // ✅ Add rate limit headers to successful responses
     const headers = {};
     const limiter = getRatelimit();
     if (limiter && isAiRequest) {
       const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
-      const { limit, remaining, reset } = await limiter.limit(ip); // Dry-run to get stats
+      const { limit, remaining, reset } = await limiter.limit(ip);
       headers['X-RateLimit-Limit'] = limit.toString();
       headers['X-RateLimit-Remaining'] = remaining.toString();
       headers['X-RateLimit-Reset'] = Math.ceil(reset / 1000).toString();
@@ -383,7 +386,7 @@ export async function POST(request) {
   }
 }
 
-// ✅ NEW: Health check endpoint for monitoring
+// ✅ Health check endpoint
 export async function GET() {
   const limiter = getRatelimit();
   
