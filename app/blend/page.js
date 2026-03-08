@@ -149,7 +149,7 @@ export default function BlendPage() {
     };
   }, [product, generatedBlend]);
 
-  // ✅ UPDATED: Poe AI: Generate Custom Blend (via backend proxy for security)
+  // ✅ UPDATED: Poe AI: Generate Custom Blend (via backend proxy for security) + DEBUG ALERTS
   const handleGenerateBlend = async () => {
     if (!userInput.trim()) {
       setGenerationError('Please describe your wellness needs first.');
@@ -159,6 +159,13 @@ export default function BlendPage() {
     setIsGenerating(true);
     setGenerationError(null);
     setGeneratedBlend(null);
+
+    // ✅ DEBUG: Log start
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🎯 handleGenerateBlend called');
+      console.log('userInput:', userInput);
+      console.log('useAI will be:', userInput?.length > 30);
+    }
 
     try {
       // ✅ Call OUR backend endpoint (not Poe directly) - API key stays secure on server
@@ -177,28 +184,63 @@ export default function BlendPage() {
         })
       });
 
+      // ✅ DEBUG: Log response status
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📡 Response status:', response.status, response.ok);
+      }
+
       const data = await response.json();
 
+      // ✅ DEBUG: Log full response
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📦 Response data:', data);
+      }
+
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to generate blend');
+        throw new Error(data.error || `HTTP ${response.status}`);
       }
 
       // ✅ Use the blend data returned from our backend (same format whether rule-based or AI)
       const blendData = data.blend;
       
       // ✅ Validate required fields
-      if (!blendData.name || !blendData.recipe || !Array.isArray(blendData.recipe)) {
+      if (!blendData?.name || !blendData?.recipe || !Array.isArray(blendData.recipe)) {
+        console.error('❌ Invalid blend structure:', blendData);
         throw new Error('Blend response missing required fields');
       }
 
-      setGeneratedBlend(blendData);
-      setProduct(blendData); // Update product for payment flow
+      // ✅ DEBUG: Alert on API success
+      if (process.env.NODE_ENV === 'development') {
+        alert(`✅ API Success!\nBlend: ${blendData.name}\nMethod: ${data.method || 'unknown'}`);
+      }
+
+      // ✅ Update state with NEW object references to force re-render
+      setGeneratedBlend({ ...blendData });
+      setProduct({ ...blendData });
+
+      // ✅ DEBUG: Confirm state update after React processes it
+      if (process.env.NODE_ENV === 'development') {
+        setTimeout(() => {
+          alert(`🔄 State updated:\ngeneratedBlend = ${!!generatedBlend}\nproduct = ${!!product}\nName: ${blendData.name}`);
+        }, 100);
+      }
       
     } catch (error) {
       console.error('Blend generation error:', error);
+      
+      // ✅ DEBUG: Alert on error
+      if (process.env.NODE_ENV === 'development') {
+        alert(`💥 Error: ${error.message}\n\nCheck console for details.`);
+      }
+      
       setGenerationError(error.message || 'Failed to generate blend. Please try again.');
     } finally {
       setIsGenerating(false);
+      
+      // ✅ DEBUG: Log completion
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 setIsGenerating(false)');
+      }
     }
   };
 
@@ -419,51 +461,65 @@ export default function BlendPage() {
         </section>
       )}
 
-      {/* Blend Recipe Display */}
+      {/* Blend Recipe Display - DEBUG BORDER ADDED */}
       {(generatedBlend || !generatedBlend) && (
         <div className="py-12 px-6 max-w-4xl mx-auto">
-          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
-            <h2 className="text-2xl font-bold mb-4">
-              {generatedBlend ? 'Your Personalized Recipe' : 'Blend Includes:'}
-            </h2>
-            
-            {generatedBlend ? (
-              <>
-                <p className="text-gray-300 mb-4 italic">{generatedBlend.description}</p>
-                <ul className="text-gray-300 space-y-3 mb-6">
-                  {generatedBlend.recipe.map((item, idx) => (
-                    <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
-                      <span>• {item.oil} — {item.purpose}</span>
-                      <span className="text-turquoise font-medium">{item.drops} drops</span>
-                    </li>
-                  ))}
+          {/* ✅ DEBUG: Bright border to detect if this section renders */}
+          <div className="border-2 border-pink-500/50 p-4 rounded-xl">
+            <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
+              <h2 className="text-2xl font-bold mb-4">
+                {generatedBlend ? 'Your Personalized Recipe' : 'Blend Includes:'}
+              </h2>
+              
+              {generatedBlend ? (
+                <>
+                  {/* ✅ DEBUG: Show state values */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="bg-purple-900/30 p-2 rounded mb-4 text-xs text-purple-300">
+                      DEBUG: generatedBlend = {JSON.stringify({
+                        name: generatedBlend.name,
+                        recipeCount: generatedBlend.recipe?.length,
+                        isAi: generatedBlend.isAi
+                      }, null, 2)}
+                    </div>
+                  )}
+                  
+                  <p className="text-gray-300 mb-4 italic">{generatedBlend.description}</p>
+                  <ul className="text-gray-300 space-y-3 mb-6">
+                    {generatedBlend.recipe?.map((item, idx) => (
+                      <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
+                        <span>• {item.oil} — {item.purpose}</span>
+                        <span className="text-turquoise font-medium">{item.drops} drops</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="bg-black p-4 rounded-lg mb-4">
+                    <p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setGeneratedBlend(null);
+                      setUserInput('');
+                      setProduct(PREDEFINED_BLENDS['xe']);
+                    }}
+                    className="text-sm text-gray-400 hover:text-turquoise underline"
+                  >
+                    ← Try a predefined blend instead
+                  </button>
+                </>
+              ) : (
+                <ul className="text-gray-300 space-y-2">
+                  {targetProduct.name === 'XE – Everybody\'s Oil' && (
+                    <>
+                      <li>• 10 drops Lavender — calms nerves, reduces inflammation</li>
+                      <li>• 8 drops Roman Chamomile — soothes tissue</li>
+                      <li>• 6 drops Bergamot FCF — uplifts mood</li>
+                    </>
+                  )}
+                  {/* Add more predefined blend details as needed */}
                 </ul>
-                <div className="bg-black p-4 rounded-lg mb-4">
-                  <p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setGeneratedBlend(null);
-                    setUserInput('');
-                    setProduct(PREDEFINED_BLENDS['xe']);
-                  }}
-                  className="text-sm text-gray-400 hover:text-turquoise underline"
-                >
-                  ← Try a predefined blend instead
-                </button>
-              </>
-            ) : (
-              <ul className="text-gray-300 space-y-2">
-                {targetProduct.name === 'XE – Everybody\'s Oil' && (
-                  <>
-                    <li>• 10 drops Lavender — calms nerves, reduces inflammation</li>
-                    <li>• 8 drops Roman Chamomile — soothes tissue</li>
-                    <li>• 6 drops Bergamot FCF — uplifts mood</li>
-                  </>
-                )}
-                {/* Add more predefined blend details as needed */}
-              </ul>
-            )}
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -567,6 +623,40 @@ export default function BlendPage() {
         </p>
         <p>© 2025 EmoCreations.skin — Crafted with cellular wellness in mind.</p>
       </footer>
+
+      {/* ✅ DEBUG: Force Re-render Button (development only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={() => {
+            console.log('🔄 Forcing re-render');
+            setGeneratedBlend(prev => prev ? {...prev, _debug: Date.now()} : prev);
+            setProduct(prev => prev ? {...prev, _debug: Date.now()} : prev);
+            alert('🔄 Re-render triggered! Check if blend appears.');
+          }}
+          className="fixed bottom-4 left-4 bg-orange-600 hover:bg-orange-500 text-white py-2 px-4 rounded font-medium transition z-50 shadow-lg"
+        >
+          🔄 Force Re-render
+        </button>
+      )}
+
+      {/* ✅ DEBUG: Loading Overlay with More Details */}
+      {isGenerating && process.env.NODE_ENV === 'development' && (
+        <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50">
+          <div className="w-12 h-12 border-4 border-turquoise border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-white text-lg font-medium">Generating your blend...</p>
+          <p className="text-gray-400 text-sm mt-2">Input: "{userInput?.slice(0, 50)}{userInput?.length > 50 ? '...' : ''}"</p>
+          <p className="text-gray-500 text-xs mt-1">This should take &lt;2 seconds for rule-based blends</p>
+          <button
+            onClick={() => {
+              setIsGenerating(false);
+              setGenerationError('Generation cancelled by user');
+            }}
+            className="mt-4 text-red-400 hover:text-red-300 text-sm underline"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
