@@ -39,7 +39,7 @@ const getRatelimit = () => {
 
 // ✅✅✅ ULTIMATE ESSENTIAL OIL LIBRARY - 150+ CONDITIONS
 const ESSENTIAL_OILS = {
-  // === PAIN & INFLAMMATION (25 conditions) ===
+  // === PAIN & INFLAMMATION ===
   headache: [
     { name: "Peppermint", amount: "8 drops", purpose: "Cooling pain relief" },
     { name: "Lavender", amount: "10 drops", purpose: "Calms nervous system" },
@@ -166,7 +166,7 @@ const ESSENTIAL_OILS = {
     { name: "Peppermint", amount: "6 drops", purpose: "Cooling" }
   ],
   
-  // === STRESS & EMOTIONS (20 conditions) ===
+  // === STRESS & EMOTIONS ===
   stress: [
     { name: "Lavender", amount: "10 drops", purpose: "Calms nerves, reduces inflammation" },
     { name: "Roman Chamomile", amount: "8 drops", purpose: "Potent antispasmodic, soothes tissue" },
@@ -268,7 +268,7 @@ const ESSENTIAL_OILS = {
     { name: "Ylang Ylang", amount: "6 drops", purpose: "Heart opening" }
   ],
   
-  // === SLEEP (10 conditions) ===
+  // === SLEEP ===
   insomnia: [
     { name: "Lavender", amount: "12 drops", purpose: "Promotes restful sleep" },
     { name: "Ylang Ylang", amount: "6 drops", purpose: "Sedative, balances emotions" },
@@ -320,7 +320,7 @@ const ESSENTIAL_OILS = {
     { name: "Sandalwood", amount: "6 drops", purpose: "Dream enhancement" }
   ],
   
-  // === HORMONAL & REPRODUCTIVE (20 conditions) ===
+  // === HORMONAL & REPRODUCTIVE ===
   menopause: [
     { name: "Clary Sage", amount: "10 drops", purpose: "Balances hormones" },
     { name: "Geranium", amount: "8 drops", purpose: "Reduces hot flashes" },
@@ -422,7 +422,7 @@ const ESSENTIAL_OILS = {
     { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
   ],
   
-  // === DIGESTIVE (15 conditions) ===
+  // === DIGESTIVE ===
   digestion: [
     { name: "Ginger", amount: "10 drops", purpose: "Improves circulation, aids digestion" },
     { name: "Peppermint", amount: "8 drops", purpose: "Relieves GI discomfort" },
@@ -499,7 +499,7 @@ const ESSENTIAL_OILS = {
     { name: "Ginger", amount: "6 drops", purpose: "Motility" }
   ],
   
-  // === RESPIRATORY (12 conditions) ===
+  // === RESPIRATORY ===
   congestion: [
     { name: "Eucalyptus", amount: "10 drops", purpose: "Opens airways" },
     { name: "Peppermint", amount: "8 drops", purpose: "Decongestant" },
@@ -561,7 +561,7 @@ const ESSENTIAL_OILS = {
     { name: "Tea Tree", amount: "6 drops", purpose: "Antimicrobial" }
   ],
   
-  // === SKIN (20 conditions) ===
+  // === SKIN ===
   acne: [
     { name: "Tea Tree", amount: "10 drops", purpose: "Antibacterial" },
     { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
@@ -663,7 +663,7 @@ const ESSENTIAL_OILS = {
     { name: "Helichrysum", amount: "6 drops", purpose: "Tissue repair" }
   ],
   
-  // === METABOLIC & CHRONIC (25 conditions) ===
+  // === METABOLIC & CHRONIC ===
   glucose: [
     { name: "Cinnamon", amount: "6 drops", purpose: "Supports healthy glucose metabolism" },
     { name: "Ginger", amount: "8 drops", purpose: "Improves circulation" },
@@ -790,7 +790,7 @@ const ESSENTIAL_OILS = {
     { name: "Frankincense", amount: "6 drops", purpose: "Healing" }
   ],
   
-  // === NEUROLOGICAL (10 conditions) ===
+  // === NEUROLOGICAL ===
   dementia: [
     { name: "Rosemary", amount: "10 drops", purpose: "Memory support" },
     { name: "Frankincense", amount: "8 drops", purpose: "Cognitive support" },
@@ -842,7 +842,7 @@ const ESSENTIAL_OILS = {
     { name: "Helichrysum", amount: "6 drops", purpose: "Tissue repair" }
   ],
   
-  // === MENTAL & COGNITIVE (10 conditions) ===
+  // === MENTAL & COGNITIVE ===
   adhd: [
     { name: "Rosemary", amount: "10 drops", purpose: "Focus support" },
     { name: "Peppermint", amount: "8 drops", purpose: "Mental clarity" },
@@ -894,7 +894,7 @@ const ESSENTIAL_OILS = {
     { name: "Vetiver", amount: "6 drops", purpose: "Stabilizing" }
   ],
   
-  // === CARDIOVASCULAR (8 conditions) ===
+  // === CARDIOVASCULAR ===
   hypertension: [
     { name: "Lavender", amount: "10 drops", purpose: "Lowers blood pressure" },
     { name: "Ylang Ylang", amount: "8 drops", purpose: "Calms heart" },
@@ -936,7 +936,7 @@ const ESSENTIAL_OILS = {
     { name: "Lemon", amount: "6 drops", purpose: "Circulation" }
   ],
   
-  // === SPECIALTY & ENERGETIC (15 conditions) ===
+  // === SPECIALTY & ENERGETIC ===
   'blood-type-a': [
     { name: "Lavender", amount: "10 drops", purpose: "Calms sensitive digestion" },
     { name: "Chamomile", amount: "8 drops", purpose: "Soothes stress response" },
@@ -1014,401 +1014,269 @@ const ESSENTIAL_OILS = {
   ]
 };
 
-// ✅✅✅ EXTENSIVE ALIAS MAPPING - 500+ NATURAL LANGUAGE VARIATIONS
+// ✅✅✅ EXTENSIVE ALIAS MAPPING WITH SYMPTOM-BASED KEYWORDS
 const CONDITION_ALIASES = {
-  // === PAIN ALIASES ===
-  'headache': ['head ache', 'head pain', 'migraine', 'tension head', 'sinus head', 'pressure head', 'throbbing head', 'pounding head', 'cluster head', 'vascular head'],
-  'migraine': ['migraines', 'migraine headache', 'hemiplegic', 'aura migraine', 'ocular migraine', 'menstrual migraine', 'hormone migraine'],
-  'tension': ['tension headache', 'tension head', 'stress head', 'tight head', 'band head', 'pressure head', 'tightness'],
-  'musclepain': ['muscle pain', 'muscle ache', 'muscle aches', 'sore muscle', 'sore muscles', 'muscle soreness', 'myalgia', 'muscular pain'],
-  'soreness': ['sore', 'soreness', 'post workout', 'post exercise', 'doms', 'delayed onset', 'workout sore', 'gym sore'],
-  'joint': ['joint pain', 'joint ache', 'aching joints', 'joint discomfort', 'joint stiffness', 'joint swelling'],
-  'arthritis': ['arthritic', 'arthrosis', 'osteoarthritis', 'rheumatoid arthritis', 'ra', 'oa', 'degenerative joint', 'wear and tear'],
-  'sciatica': ['sciatic', 'sciatic nerve', 'sciatic pain', 'piriformis', 'lower back leg', 'shooting leg', 'radiating leg'],
-  'nervepain': ['nerve pain', 'nerve ache', 'neuralgia', 'nerve damage', 'pinched nerve', 'compressed nerve'],
-  'neuropathy': ['peripheral neuropathy', 'diabetic neuropathy', 'nerve damage', 'numbness', 'tingling', 'pins and needles'],
-  'backpain': ['back pain', 'back ache', 'lower back', 'low back', 'lumbar', 'upper back', 'mid back', 'thoracic', 'spine pain'],
-  'neckpain': ['neck pain', 'neck ache', 'stiff neck', 'cervical', 'whiplash', 'text neck', 'forward head'],
-  'shoulder': ['shoulder pain', 'shoulder ache', 'rotator cuff', 'frozen shoulder', 'impingement', 'shoulder blade', 'scapula'],
-  'knee': ['knee pain', 'knee ache', 'patella', 'kneecap', 'runner knee', 'jumpers knee', 'arthritis knee'],
-  'injury': ['injury', 'injuries', 'trauma', 'accident', 'hurt', 'wound', 'bruise', 'contusion'],
-  'sprain': ['sprain', 'sprained', 'twisted', 'rolled ankle', 'ligament'],
-  'strain': ['strain', 'strained', 'pulled muscle', 'torn muscle', 'muscle tear'],
-  'tendonitis': ['tendonitis', 'tendinitis', 'tennis elbow', 'golfers elbow', 'achilles', 'rotator cuff tendonitis'],
-  'bursitis': ['bursitis', 'bursa', 'hip bursitis', 'shoulder bursitis', 'knee bursitis'],
-  'plantar': ['plantar fasciitis', 'heel pain', 'foot pain', 'arch pain', 'heel spur'],
-  'carpal': ['carpal tunnel', 'wrist pain', 'repetitive strain', 'rsi', 'mouse hand', 'keyboard hand'],
-  'fibromyalgia': ['fibro', 'fms', 'fibromyalgia', 'widespread pain', 'all over pain', 'chronic pain syndrome'],
-  'chronic_pain': ['chronic pain', 'persistent pain', 'long term pain', 'ongoing pain', 'constant pain'],
-  'inflammation': ['inflammation', 'inflamed', 'swelling', 'edema', 'puffy', 'redness', 'heat'],
-  'swelling': ['swelling', 'swollen', 'fluid retention', 'water retention', 'edema', 'puffy'],
+  // === PAIN ALIASES (Expanded with symptoms) ===
+  'sciatica': [
+    'sciatic', 'sciatica', 'sciatic nerve', 'sciatic pain', 'piriformis', 
+    'lower back leg', 'shooting leg', 'radiating leg', 'leg pain from back',
+    'buttock to leg', 'nerve pain leg', 'down the leg pain', 'shooting down leg',
+    'radiating pain leg', 'leg numbness', 'leg tingling', 'leg weakness',
+    'lower back shooting', 'back to leg', 'hip to leg', 'glute to leg'
+  ],
+  'backpain': [
+    'back pain', 'back ache', 'lower back', 'low back', 'lumbar', 'upper back',
+    'mid back', 'thoracic', 'spine pain', 'back stiffness', 'back tightness',
+    'back spasm', 'back cramp', 'aching back', 'sore back', 'back injury',
+    'disc pain', 'herniated disc', 'bulging disc', 'slipped disc', 'degenerative disc'
+  ],
+  'headache': [
+    'head ache', 'head pain', 'migraine', 'tension head', 'sinus head', 
+    'pressure head', 'throbbing head', 'pounding head', 'cluster head', 
+    'vascular head', 'forehead pain', 'temple pain', 'behind eye pain',
+    'one sided head', 'left head', 'right head', 'band around head',
+    'vice grip head', 'tight head', 'heavy head', 'foggy head'
+  ],
+  'hotflash': [
+    'hot flash', 'hot flashes', 'hotflush', 'hot flushes', 'night sweat', 
+    'night sweats', 'sudden heat', 'wave of heat', 'flushing', 'blushing',
+    'feeling hot', 'overheating', 'temperature spike', 'sweating episodes',
+    'menopausal heat', 'hormonal heat', 'internal heat', 'burning sensation'
+  ],
+  'menopause': [
+    'menopause', 'menopausal', 'peri-menopause', 'perimenopause', 'post-menopause',
+    'change of life', 'climacteric', 'hormone change', 'estrogen drop',
+    'progesterone drop', 'ovarian decline', 'period stopping', 'cycles ending',
+    'midlife change', 'women health', 'hormone transition', 'aging woman'
+  ],
+  'stress': [
+    'stress', 'stressed', 'stressful', 'overwhelm', 'overwhelmed', 'pressure',
+    'tension', 'strain', 'burnout', 'burnt out', 'too much', 'cant cope',
+    'cant handle', 'work stress', 'life stress', 'emotional stress', 'mental stress',
+    'chronic stress', 'acute stress', 'anxiety stress', 'worry stress'
+  ],
+  'insomnia': [
+    'insomnia', 'insomniac', 'sleepless', 'sleeplessness', 'cant sleep', 
+    'cannot sleep', 'trouble sleeping', 'difficulty sleeping', 'poor sleep',
+    'bad sleep', 'wake up', 'wake early', 'middle night wake', '3am wake',
+    '4am wake', 'tossing turning', 'cant fall asleep', 'cant stay asleep',
+    'restless sleep', 'light sleep', 'interrupted sleep', 'non-restorative sleep'
+  ],
   
-  // === STRESS ALIASES ===
-  'stress': ['stress', 'stressed', 'stressful', 'overwhelm', 'overwhelmed', 'pressure', 'tension', 'strain'],
-  'anxiety': ['anxiety', 'anxious', 'anxiousness', 'nervous', 'nervousness', 'worry', 'worried', 'panic', 'panic attack'],
-  'panic': ['panic', 'panic attack', 'panic disorder', 'hyperventilation', 'acute anxiety'],
-  'depression': ['depression', 'depressed', 'depressive', 'sad', 'sadness', 'low mood', 'down', 'blue', 'melancholy'],
-  'mood': ['mood', 'moods', 'mood swing', 'mood swings', 'emotional', 'emotion', 'feelings'],
-  'anger': ['anger', 'angry', 'rage', 'furious', 'mad', 'irritated', 'irritation', 'frustrated', 'frustration'],
-  'grief': ['grief', 'grieving', 'loss', 'bereavement', 'mourning', 'sadness', 'heartbreak'],
-  'trauma': ['trauma', 'traumatic', 'ptsd', 'post traumatic', 'abuse', 'violence', 'accident trauma'],
-  'overwhelm': ['overwhelm', 'overwhelmed', 'too much', 'cant cope', 'cant handle', 'burnout', 'burnt out'],
-  'burnout': ['burnout', 'burnt out', 'exhausted', 'depleted', 'drained', 'compassion fatigue'],
-  'fatigue': ['fatigue', 'tired', 'tiredness', 'exhaustion', 'exhausted', 'lethargy', 'lethargic', 'weakness'],
-  'exhaustion': ['exhaustion', 'exhausted', 'extreme fatigue', 'chronic fatigue', 'adrenal fatigue'],
-  'irritability': ['irritability', 'irritable', 'snappy', 'short tempered', 'easily annoyed', 'grumpy'],
-  'frustration': ['frustration', 'frustrated', 'annoyed', 'agitated', 'restless'],
-  'loneliness': ['loneliness', 'lonely', 'isolated', 'isolation', 'alone', 'disconnected'],
-  'sadness': ['sadness', 'sad', 'unhappy', 'down', 'low', 'blue', 'tearful'],
-  'fear': ['fear', 'afraid', 'scared', 'frightened', 'terrified', 'phobia', 'phobic'],
-  'worry': ['worry', 'worried', 'worries', 'concern', 'concerned', 'apprehensive'],
-  'shock': ['shock', 'shocked', 'trauma', 'acute stress', 'surprise trauma'],
-  'emotional': ['emotional', 'emotions', 'feelings', 'mood', 'sensitive', 'oversensitive'],
-  
-  // === SLEEP ALIASES ===
-  'insomnia': ['insomnia', 'insomniac', 'sleepless', 'sleeplessness', 'cant sleep', 'cannot sleep', 'trouble sleeping'],
-  'sleep': ['sleep', 'sleeping', 'sleep issue', 'sleep problem', 'sleep disorder', 'poor sleep', 'bad sleep'],
-  'restless': ['restless', 'restlessness', 'tossing', 'turning', 'toss and turn', 'cant settle'],
-  'nightmares': ['nightmares', 'bad dreams', 'scary dreams', 'night terrors', 'disturbing dreams'],
-  'sleeplessness': ['sleeplessness', 'wakeful', 'wakefulness', 'awake at night'],
-  'jetlag': ['jet lag', 'jetlag', 'time zone', 'travel fatigue', 'circadian disruption'],
-  'shiftwork': ['shift work', 'shiftwork', 'night shift', 'rotating shift', 'irregular hours'],
-  'apnea': ['sleep apnea', 'apnea', 'breathing sleep', 'stop breathing sleep'],
-  'snoring': ['snoring', 'snore', 'loud snoring', 'partner snoring'],
-  'dreams': ['dreams', 'dreaming', 'vivid dreams', 'lucid dreams', 'dream work'],
-  
-  // === HORMONAL ALIASES ===
-  'menopause': ['menopause', 'menopausal', 'peri-menopause', 'perimenopause', 'post-menopause', 'change of life', 'climacteric'],
-  'hotflash': ['hot flash', 'hot flashes', 'hotflush', 'hot flushes', 'night sweat', 'night sweats'],
-  'pms': ['pms', 'premenstrual', 'pre menstrual', 'period symptoms', 'monthly symptoms'],
-  'cramps': ['cramps', 'cramping', 'menstrual cramps', 'period cramps', 'abdominal cramps', 'spasms'],
-  'period': ['period', 'menstruation', 'menses', 'monthly', 'menstrual', 'cycle'],
-  'endometriosis': ['endometriosis', 'endo', 'endometrial', 'uterine lining'],
-  'pcos': ['pcos', 'polycystic ovary', 'polycystic ovarian syndrome', 'ovarian cysts'],
-  'fertility': ['fertility', 'fertilization', 'conception', 'trying to conceive', 'ttc', 'infertility'],
-  'pregnancy': ['pregnancy', 'pregnant', 'expecting', 'prenatal', 'maternity', 'gestation'],
-  'postpartum': ['postpartum', 'post-partum', 'postnatal', 'after birth', 'new mom', 'fourth trimester'],
-  'libido': ['libido', 'sex drive', 'low libido', 'sexual desire', 'intimacy', 'arousal'],
-  'impotence': ['impotence', 'erectile dysfunction', 'ed', 'performance anxiety', 'male enhancement'],
-  'infertility': ['infertility', 'infertile', 'cant conceive', 'cannot conceive', 'fertility issues'],
-  'miscarriage': ['miscarriage', 'pregnancy loss', 'loss of pregnancy', 'stillbirth'],
-  'abortion': ['abortion', 'termination', 'pregnancy termination'],
-  'breastfeeding': ['breastfeeding', 'breast feeding', 'nursing', 'lactation', 'chestfeeding'],
-  'lactation': ['lactation', 'milk supply', 'low milk', 'breast milk', 'nursing'],
-  'mastitis': ['mastitis', 'breast infection', 'clogged duct', 'plugged duct'],
-  'prostate': ['prostate', 'prostate health', 'bph', 'enlarged prostate', 'prostate issues'],
-  'ed': ['ed', 'erectile dysfunction', 'impotence', 'performance'],
-  
-  // === DIGESTIVE ALIASES ===
-  'digestion': ['digestion', 'digestive', 'digestive issue', 'digestive problem', 'gut', 'gut health', 'stomach'],
-  'bloating': ['bloating', 'bloat', 'bloated', 'distended', 'swollen belly', 'puffy belly'],
-  'nausea': ['nausea', 'nauseous', 'queasy', 'sick', 'upset stomach', 'morning sickness'],
-  'ibs': ['ibs', 'irritable bowel', 'irritable bowel syndrome', 'spastic colon'],
-  'constipation': ['constipation', 'constipated', 'irregular', 'infrequent', 'hard stool', 'backed up'],
-  'diarrhea': ['diarrhea', 'loose stool', 'frequent bm', 'urgent', 'running'],
-  'heartburn': ['heartburn', 'acid reflux', 'gerd', 'reflux', 'indigestion'],
-  'gerd': ['gerd', 'gastroesophageal reflux', 'acid reflux', 'reflux disease'],
-  'acid_reflux': ['acid reflux', 'reflux', 'heartburn', 'gerd', 'stomach acid'],
-  'indigestion': ['indigestion', 'dyspepsia', 'upset stomach', 'discomfort', 'heavy stomach'],
-  'gas': ['gas', 'gassy', 'flatulence', 'farting', 'burping', 'belching', 'bloating'],
-  'colitis': ['colitis', 'ulcerative colitis', 'uc', 'inflammatory bowel'],
-  'crohns': ['crohns', 'crohns disease', 'ibd', 'inflammatory bowel disease'],
-  'leaky_gut': ['leaky gut', 'intestinal permeability', 'gut permeability'],
-  'sibo': ['sibo', 'small intestine bacterial overgrowth', 'bacterial overgrowth'],
-  
-  // === RESPIRATORY ALIASES ===
-  'congestion': ['congestion', 'congested', 'stuffy', 'stuffy nose', 'blocked nose', 'nasal congestion'],
-  'sinus': ['sinus', 'sinuses', 'sinusitis', 'sinus infection', 'sinus pressure', 'sinus pain'],
-  'cold': ['cold', 'common cold', 'upper respiratory', 'sniffles', 'runny nose'],
-  'flu': ['flu', 'influenza', 'stomach flu', 'viral infection', 'fever'],
-  'cough': ['cough', 'coughing', 'chronic cough', 'dry cough', 'wet cough', 'productive cough'],
-  'asthma': ['asthma', 'asthmatic', 'wheezing', 'breathless', 'shortness of breath'],
-  'allergies': ['allergies', 'allergic', 'hay fever', 'seasonal allergies', 'pollen', 'dust allergies'],
-  'bronchitis': ['bronchitis', 'bronchial', 'chest cold', 'bronchial infection'],
-  'pneumonia': ['pneumonia', 'lung infection', 'pneumonitis'],
-  'pleurisy': ['pleurisy', 'pleuritis', 'lung inflammation'],
-  'laryngitis': ['laryngitis', 'lost voice', 'hoarse', 'hoarseness', 'vocal cord'],
-  'sore_throat': ['sore throat', 'throat pain', 'scratchy throat', 'pharyngitis', 'strep throat'],
-  
-  // === SKIN ALIASES ===
-  'acne': ['acne', 'pimples', 'breakouts', 'zits', 'blemishes', 'blackheads', 'whiteheads'],
-  'eczema': ['eczema', 'atopic dermatitis', 'dry patches', 'itchy skin', 'skin rash'],
-  'psoriasis': ['psoriasis', 'psoriatic', 'scaly skin', 'plaque', 'skin flakes'],
-  'rosacea': ['rosacea', 'red face', 'facial redness', 'flushed', 'spider veins face'],
-  'aging': ['aging', 'ageing', 'anti-aging', 'old skin', 'mature skin', 'wrinkles'],
-  'wrinkles': ['wrinkles', 'lines', 'fine lines', 'crow feet', 'forehead lines', 'expression lines'],
-  'scars': ['scars', 'scarring', 'scar tissue', 'keloid', 'stretch marks', 'striae'],
-  'burns': ['burns', 'burned', 'sunburn', 'thermal burn', 'chemical burn'],
-  'wounds': ['wounds', 'cuts', 'lacerations', 'open wounds', 'sores'],
-  'dermatitis': ['dermatitis', 'contact dermatitis', 'skin inflammation', 'skin irritation'],
-  'hives': ['hives', 'urticaria', 'welts', 'bumps', 'allergic reaction skin'],
-  'rash': ['rash', 'skin rash', 'red rash', 'itchy rash', 'breakout'],
-  'itching': ['itching', 'itchy', 'pruritus', 'scratchy', 'itch'],
-  'dry_skin': ['dry skin', 'xerosis', 'flaky skin', 'rough skin', 'dehydrated skin'],
-  'oily_skin': ['oily skin', 'greasy skin', 'shiny skin', 'excess oil'],
-  'sensitive_skin': ['sensitive skin', 'reactive skin', 'easily irritated', 'delicate skin'],
-  'sunburn': ['sunburn', 'sun burned', 'sun damage', 'uv damage', 'overexposed'],
-  'cellulite': ['cellulite', 'orange peel', 'dimpled skin', 'cottage cheese skin'],
-  'varicose': ['varicose', 'varicose veins', 'spider veins', 'bulging veins'],
-  'spider_veins': ['spider veins', 'telangiectasia', 'broken capillaries', 'thread veins'],
-  
-  // === METABOLIC ALIASES ===
-  'glucose': ['glucose', 'blood sugar', 'sugar level', 'glucose level', 'hyperglycemia', 'high blood sugar'],
-  'diabetes': ['diabetes', 'diabetic', 'type 1 diabetes', 'type 2 diabetes', 't1d', 't2d', 'juvenile diabetes'],
-  'metabolism': ['metabolism', 'metabolic', 'slow metabolism', 'fast metabolism', 'metabolic rate', 'bmr'],
-  'weight': ['weight', 'weight loss', 'weight gain', 'obesity', 'overweight', 'underweight', 'body weight'],
-  'thyroid': ['thyroid', 'thyroid issues', 'thyroid problems', 'thyroid disorder', 'thyroid disease'],
-  'hypothyroid': ['hypothyroid', 'underactive thyroid', 'low thyroid', 'hashimotos', 'hashimoto'],
-  'hyperthyroid': ['hyperthyroid', 'overactive thyroid', 'high thyroid', 'graves disease', 'graves'],
-  'adrenal': ['adrenal', 'adrenal issues', 'adrenal problems', 'adrenal disorder', 'hpa axis'],
-  'adrenal_fatigue': ['adrenal fatigue', 'adrenal exhaustion', 'burnt adrenals', 'hpa dysfunction'],
-  'cushings': ['cushings', 'cushings syndrome', 'high cortisol', 'cortisol excess'],
-  'addisons': ['addisons', 'addisons disease', 'low cortisol', 'adrenal insufficiency'],
-  'lupus': ['lupus', 'sle', 'systemic lupus', 'lupus erythematosus', 'autoimmune lupus'],
-  'autoimmune': ['autoimmune', 'autoimmune disease', 'autoimmune disorder', 'immune system attack'],
-  'cfs': ['cfs', 'chronic fatigue syndrome', 'mecfs', 'myalgic encephalomyelitis', 'post viral'],
-  'longcovid': ['long covid', 'long-covid', 'post covid', 'long hauler', 'covid long term'],
-  'opioid': ['opioid', 'opioids', 'opiate', 'opiates', 'narcotic', 'painkiller dependency'],
-  'addiction': ['addiction', 'addicted', 'substance abuse', 'substance use', 'dependency'],
-  'withdrawal': ['withdrawal', 'detox', 'detoxing', 'coming off', 'quitting'],
-  'cravings': ['cravings', 'urge', 'desire', 'want', 'compulsion'],
-  'detox': ['detox', 'detoxification', 'cleanse', 'purify', 'eliminate toxins'],
-  'candida': ['candida', 'yeast', 'yeast infection', 'thrush', 'fungal overgrowth'],
-  'parasites': ['parasites', 'worms', 'intestinal parasites', 'parasitic infection'],
-  'lyme': ['lyme', 'lyme disease', 'tick bite', 'borrelia'],
-  'epstein': ['epstein', 'epstein barr', 'ebv', 'mono', 'mononucleosis'],
-  'shingles': ['shingles', 'herpes zoster', 'zoster', 'post herpetic neuralgia'],
-  
-  // === NEUROLOGICAL ALIASES ===
-  'dementia': ['dementia', 'cognitive decline', 'memory loss', 'confusion', 'senility'],
-  'alzheimer': ['alzheimer', 'alzheimers', 'alzheimers disease', 'ad', 'memory disease'],
-  'parkinson': ['parkinson', 'parkinsons', 'parkinsons disease', 'pd', 'tremor disease'],
-  'ms': ['ms', 'multiple sclerosis', 'demyelinating', 'neurological autoimmune'],
-  'als': ['als', 'amyotrophic lateral sclerosis', 'lou gehrigs', 'motor neuron disease'],
-  'seizure': ['seizure', 'seizures', 'convulsion', 'epileptic episode'],
-  'epilepsy': ['epilepsy', 'epileptic', 'seizure disorder', 'convulsive disorder'],
-  'tremor': ['tremor', 'tremors', 'shaking', 'shaky', 'essential tremor'],
-  'stroke': ['stroke', 'cerebrovascular accident', 'cva', 'brain attack', 'mini stroke'],
-  'concussion': ['concussion', 'head injury', 'traumatic brain injury', 'tbi', 'brain trauma'],
-  
-  // === MENTAL ALIASES ===
-  'adhd': ['adhd', 'attention deficit', 'attention deficit hyperactivity', 'hyperactive', 'impulsive'],
-  'add': ['add', 'attention deficit', 'attention disorder', 'inattentive', 'distractible'],
-  'focus': ['focus', 'concentration', 'attention', 'mental focus', 'clarity'],
-  'memory': ['memory', 'memory loss', 'forgetful', 'forgetfulness', 'recall', 'remembering'],
-  'brain_fog': ['brain fog', 'mental fog', 'foggy', 'cloudy mind', 'fuzzy thinking', 'mental clarity'],
-  'concentration': ['concentration', 'focus', 'attention', 'mental focus', 'study'],
-  'learning': ['learning', 'learning disability', 'dyslexia', 'study', 'education'],
-  'autism': ['autism', 'autistic', 'asd', 'autism spectrum', 'neurodivergent'],
-  'aspergers': ['aspergers', 'asperger syndrome', 'high functioning autism', 'level 1 autism'],
-  'sensory': ['sensory', 'sensory processing', 'sensory overload', 'sensory issues', 'spd'],
-  
-  // === CARDIOVASCULAR ALIASES ===
-  'hypertension': ['hypertension', 'high blood pressure', 'hbp', 'elevated bp', 'pressure high'],
-  'hypotension': ['hypotension', 'low blood pressure', 'low bp', 'pressure low', 'orthostatic'],
-  'palpitations': ['palpitations', 'heart palpitations', 'racing heart', 'fluttering', 'skipped beats'],
-  'arrhythmia': ['arrhythmia', 'irregular heartbeat', 'heart rhythm', 'afib', 'atrial fibrillation'],
-  'angina': ['angina', 'chest pain', 'heart pain', 'cardiac pain', 'ischemia'],
-  'chf': ['chf', 'congestive heart failure', 'heart failure', 'cardiac insufficiency'],
-  'circulation': ['circulation', 'poor circulation', 'blood flow', 'peripheral circulation', 'cold hands'],
-  'varicose_veins': ['varicose veins', 'varicose', 'vein issues', 'venous insufficiency', 'leg veins'],
-  
-  // === SPECIALTY ALIASES ===
-  'blood-type-a': ['blood type a', 'type a', 'a positive', 'a negative', 'blood type diet'],
-  'blood-type-b': ['blood type b', 'type b', 'b positive', 'b negative'],
-  'blood-type-o': ['blood type o', 'type o', 'o positive', 'o negative', 'blood type o diet'],
-  'blood-type-ab': ['blood type ab', 'type ab', 'ab positive', 'ab negative'],
-  'telomere': ['telomere', 'telomeres', 'anti-aging', 'longevity', 'cellular aging', 'life extension'],
-  'unbroken': ['unbroken', 'chronic illness', 'invisible illness', 'spoonie', 'warrior', 'fighter'],
-  'queen': ['queen', 'queen energy', 'goddess', 'divine feminine', 'self-love', 'empowerment'],
-  'king': ['king', 'king energy', 'divine masculine', 'leadership', 'strength', 'power'],
-  'meditation': ['meditation', 'meditating', 'mindfulness', 'zen', 'contemplation', 'spiritual'],
-  'grounding': ['grounding', 'grounded', 'earthing', 'stability', 'centered', 'rooted'],
-  'energy': ['energy', 'energy boost', 'vitality', 'vigor', 'life force', 'chi', 'prana'],
-  'chakra': ['chakra', 'chakras', 'energy centers', 'spiritual energy', 'kundalini'],
-  'aura': ['aura', 'auric field', 'energy field', 'biofield', 'spiritual protection'],
-  'protection': ['protection', 'spiritual protection', 'psychic protection', 'energy shield', 'warding'],
-  'xe': ['xe', 'everybodys oil', 'universal blend', 'starter blend', 'basic blend']
+  // === SYMPTOM-ONLY ALIASES FOR INTELLIGENT MAPPING ===
+  'pain_symptoms': [
+    'aching', 'sore', 'tender', 'throbbing', 'stabbing', 'shooting', 'burning',
+    'tingling', 'numb', 'weak', 'stiff', 'tight', 'cramping', 'spasming',
+    'sharp pain', 'dull pain', 'constant pain', 'intermittent pain', 'worse at night',
+    'worse with movement', 'better with rest', 'radiating', 'referred pain'
+  ],
+  'inflammation_symptoms': [
+    'swelling', 'swollen', 'puffy', 'redness', 'warmth', 'heat', 'inflamed',
+    'edema', 'fluid retention', 'water retention', 'pitting edema', 'joint swelling'
+  ],
+  'fatigue_symptoms': [
+    'tired', 'exhausted', 'drained', 'depleted', 'lethargic', 'weak', 'no energy',
+    'low energy', 'crashing', 'afternoon crash', 'wired tired', 'unrefreshing sleep',
+    'heavy limbs', 'brain fog', 'mental fatigue', 'physical fatigue'
+  ],
+  'digestive_symptoms': [
+    'bloating', 'bloated', 'gassy', 'gas', 'burping', 'belching', 'nausea',
+    'queasy', 'upset stomach', 'cramping', 'diarrhea', 'constipation', 'irregular',
+    'heartburn', 'reflux', 'indigestion', 'full', 'heavy stomach', 'gurgling'
+  ],
+  'respiratory_symptoms': [
+    'congestion', 'stuffy', 'runny nose', 'sinus pressure', 'cough', 'wheezing',
+    'shortness of breath', 'breathless', 'chest tight', 'chest congestion',
+    'post nasal drip', 'sore throat', 'hoarse', 'phlegm', 'mucus'
+  ],
+  'skin_symptoms': [
+    'itchy', 'itching', 'rash', 'redness', 'dry', 'flaky', 'oily', 'sensitive',
+    'burning skin', 'tingling skin', 'numb skin', 'swollen skin', 'warm skin'
+  ],
+  'emotional_symptoms': [
+    'anxious', 'worried', 'nervous', 'panicked', 'sad', 'down', 'blue', 'tearful',
+    'angry', 'irritable', 'frustrated', 'overwhelmed', 'hopeless', 'worthless',
+    'guilty', 'shame', 'lonely', 'isolated', 'disconnected', 'numb emotions'
+  ]
 };
 
 // ✅ CONDITION RELATIONSHIP MAPPING - FOR MULTI-CONDITION INPUTS
 const CONDITION_RELATIONSHIPS = {
-  // If user has multiple related conditions, recommend the most comprehensive blend
-  'stress + insomnia': 'insomnia', // Stress-related insomnia → sleep blend
-  'anxiety + panic': 'panic', // Acute takes priority
-  'depression + fatigue': 'depression', // Root cause
-  'pain + inflammation': 'inflammation', // Systemic approach
-  'headache + tension': 'tension', // Root cause
-  'migraine + nausea': 'migraine', // Primary condition
-  'pms + cramps': 'cramps', // Most symptomatic
-  'menopause + hotflash': 'hotflash', // Most bothersome
-  'digestion + bloating': 'bloating', # Most specific
-  'ibs + constipation': 'ibs', // Primary diagnosis
-  'cold + congestion': 'congestion', // Most symptomatic
-  'flu + fever': 'flu', // Primary illness
-  'acne + scarring': 'acne', # Active issue first
-  'aging + wrinkles': 'wrinkles', // Most specific
-  'diabetes + neuropathy': 'neuropathy', // Complication focus
-  'thyroid + fatigue': 'thyroid', // Root cause
-  'autoimmune + inflammation': 'autoimmune', // Primary diagnosis
-  'adrenal + stress': 'adrenal', # Root cause
-  'ptsd + anxiety': 'trauma', // Root cause
-  'addiction + cravings': 'addiction', // Primary issue
-  'pregnancy + nausea': 'pregnancy', // Primary state
-  'postpartum + depression': 'postpartum', // Primary state
-  'cancer + pain': 'chronic_pain', // Symptom management
-  'chemo + nausea': 'nausea', // Most bothersome symptom
-  'surgery + pain': 'injury', # Recovery focus
-  'stroke + paralysis': 'stroke', // Primary diagnosis
-  'heart + anxiety': 'palpitations', # Most symptomatic
-  'lung + breathing': 'asthma', // Most specific
-  'kidney + swelling': 'swelling', // Symptom management
-  'liver + detox': 'detox', // Support focus
-  'gut + bloating': 'bloating', // Most symptomatic
-  'skin + itching': 'itching', // Most bothersome
-  'joint + arthritis': 'arthritis', // Primary diagnosis
-  'back + sciatica': 'sciatica', // Most specific
-  'neck + headache': 'headache', // Most symptomatic
-  'shoulder + frozen': 'shoulder', // Primary issue
-  'knee + arthritis': 'arthritis', // Primary diagnosis
-  'foot + plantar': 'plantar', // Most specific
-  'hand + carpal': 'carpal', // Most specific
-  'eye + strain': 'headache', // Related symptom
-  'ear + infection': 'cold', // Related illness
-  'nose + sinus': 'sinus', // Most specific
-  'throat + sore': 'sore_throat', // Most specific
-  'mouth + ulcer': 'stress', // Often stress-related
-  'teeth + pain': 'headache', // Related pain
-  'gum + inflammation': 'inflammation', // Systemic approach
-  'hair + loss': 'thyroid', // Often thyroid-related
-  'nail + brittle': 'thyroid', // Often thyroid-related
-  'bone + density': 'thyroid', # Metabolic support
-  'muscle + weakness': 'fatigue', // Systemic approach
-  'nerve + damage': 'neuropathy', // Primary diagnosis
-  'blood + sugar': 'glucose', // Primary issue
-  'cholesterol + high': 'metabolism', // Metabolic support
-  'weight + gain': 'metabolism', // Root cause
-  'weight + loss': 'metabolism', // Root cause
-  'appetite + increase': 'cravings', // Most specific
-  'appetite + decrease': 'nausea', // Often related
-  'sleep + apnea': 'apnea', // Primary diagnosis
-  'snore + loud': 'snoring', // Primary issue
-  'dream + vivid': 'dreams', // Primary issue
-  'nightmare + frequent': 'nightmares', // Primary issue
-  'mood + swing': 'mood', // Primary issue
-  'anger + rage': 'anger', // Primary issue
-  'grief + loss': 'grief', // Primary issue
-  'trauma + abuse': 'trauma', // Primary issue
-  'fear + phobia': 'fear', // Primary issue
-  'worry + anxiety': 'anxiety', // Primary issue
-  'stress + burnout': 'burnout', // More severe
-  'fatigue + exhaustion': 'exhaustion', // More severe
-  'pain + chronic': 'chronic_pain', // Primary diagnosis
-  'inflammation + systemic': 'inflammation', // Primary issue
-  'infection + viral': 'flu', // Primary type
-  'infection + bacterial': 'cold', // Primary type
-  'allergy + seasonal': 'allergies', // Primary type
-  'allergy + food': 'digestion', // Related system
-  'skin + dry': 'dry_skin', // Most specific
-  'skin + oily': 'oily_skin', // Most specific
-  'skin + sensitive': 'sensitive_skin', // Most specific
-  'wound + healing': 'wounds', // Primary issue
-  'scar + old': 'scars', // Primary issue
-  'burn + recent': 'burns', // Primary issue
-  'sun + damage': 'sunburn', // Primary issue
-  'cellulite + reduction': 'cellulite', // Primary issue
-  'vein + varicose': 'varicose_veins', // Primary issue
-  'circulation + poor': 'circulation', // Primary issue
-  'heart + palpitation': 'palpitations', // Primary issue
-  'blood + pressure': 'hypertension', // Primary issue
-  'thyroid + underactive': 'hypothyroid', // Most specific
-  'thyroid + overactive': 'hyperthyroid', // Most specific
-  'adrenal + exhausted': 'adrenal_fatigue', // Most specific
-  'hormone + imbalance': 'menopause', // Most common
-  'fertility + issues': 'fertility', // Primary issue
-  'pregnancy + first': 'pregnancy', // Primary state
-  'pregnancy + second': 'pregnancy', // Primary state
-  'pregnancy + third': 'pregnancy', // Primary state
-  'postpartum + healing': 'postpartum', // Primary state
-  'breast + feeding': 'breastfeeding', // Primary state
-  'milk + supply': 'lactation', // Primary issue
-  'mastitis + infection': 'mastitis', // Primary issue
-  'prostate + enlarged': 'prostate', // Primary issue
-  'libido + low': 'libido', // Primary issue
-  'performance + anxiety': 'impotence', // Primary issue
-  'addiction + alcohol': 'addiction', // Primary issue
-  'addiction + drug': 'addiction', // Primary issue
-  'addiction + opioid': 'opioid', // Most specific
-  'withdrawal + acute': 'withdrawal', // Primary issue
-  'craving + sugar': 'cravings', // Primary issue
-  'craving + carb': 'cravings', // Primary issue
-  'detox + liver': 'detox', // Primary organ
-  'detox + kidney': 'detox', // Primary organ
-  'candida + oral': 'candida', // Primary issue
-  'candida + vaginal': 'candida', // Primary issue
-  'candida + systemic': 'candida', // Primary issue
-  'parasite + intestinal': 'parasites', // Primary issue
-  'lyme + chronic': 'lyme', // Primary issue
-  'epstein + active': 'epstein', // Primary issue
-  'shingles + active': 'shingles', // Primary issue
-  'dementia + early': 'dementia', // Primary issue
-  'dementia + moderate': 'dementia', // Primary issue
-  'dementia + severe': 'dementia', // Primary issue
-  'alzheimer + early': 'alzheimer', // Primary issue
-  'parkinson + early': 'parkinson', // Primary issue
-  'ms + relapsing': 'ms', // Primary type
-  'ms + progressive': 'ms', // Primary type
-  'als + early': 'als', // Primary issue
-  'seizure + frequent': 'seizure', // Primary issue
-  'epilepsy + controlled': 'epilepsy', // Primary issue
-  'epilepsy + uncontrolled': 'epilepsy', // Primary issue
-  'tremor + essential': 'tremor', // Primary type
-  'tremor + parkinson': 'parkinson', // Primary cause
-  'stroke + recent': 'stroke', // Primary issue
-  'stroke + old': 'stroke', // Primary issue
-  'concussion + acute': 'concussion', // Primary issue
-  'concussion + chronic': 'concussion', // Primary issue
-  'adhd + child': 'adhd', // Primary issue
-  'adhd + adult': 'adhd', // Primary issue
-  'add + inattentive': 'add', // Primary type
-  'focus + poor': 'focus', // Primary issue
-  'memory + poor': 'memory', // Primary issue
-  'brain + fog': 'brain_fog', // Primary issue
-  'concentration + poor': 'concentration', // Primary issue
-  'learning + disability': 'learning', // Primary issue
-  'autism + child': 'autism', // Primary issue
-  'autism + adult': 'autism', // Primary issue
-  'aspergers + mild': 'aspergers', // Primary issue
-  'sensory + overload': 'sensory', // Primary issue
-  'hypertension + mild': 'hypertension', // Primary issue
-  'hypertension + severe': 'hypertension', // Primary issue
-  'hypotension + orthostatic': 'hypotension', // Primary type
-  'palpitation + occasional': 'palpitations', // Primary issue
-  'palpitation + frequent': 'palpitations', // Primary issue
-  'arrhythmia + benign': 'arrhythmia', // Primary issue
-  'arrhythmia + serious': 'arrhythmia', // Primary issue
-  'angina + stable': 'angina', // Primary issue
-  'angina + unstable': 'angina', // Primary issue
-  'chf + mild': 'chf', // Primary issue
-  'chf + severe': 'chf', // Primary issue
-  'circulation + cold': 'circulation', // Primary symptom
-  'circulation + numb': 'circulation', // Primary symptom
-  'varicose + mild': 'varicose_veins', // Primary issue
-  'varicose + severe': 'varicose_veins', // Primary issue
-  'blood + type': 'blood-type-a', // Default to type a
-  'telomere + length': 'telomere', // Primary issue
-  'unbroken + chronic': 'unbroken', // Primary issue
-  'queen + energy': 'queen', // Primary issue
-  'king + energy': 'king', // Primary issue
-  'meditation + daily': 'meditation', // Primary practice
-  'meditation + beginner': 'meditation', // Primary practice
-  'grounding + needed': 'grounding', // Primary issue
-  'energy + low': 'energy', // Primary issue
-  'energy + high': 'energy', // Primary issue
-  'chakra + balance': 'chakra', // Primary issue
-  'aura + cleanse': 'aura', // Primary issue
-  'protection + needed': 'protection', // Primary issue
-  'xe + starter': 'xe' // Primary blend
+  'stress + insomnia': 'insomnia',
+  'anxiety + panic': 'panic',
+  'depression + fatigue': 'depression',
+  'pain + inflammation': 'inflammation',
+  'headache + tension': 'tension',
+  'migraine + nausea': 'migraine',
+  'pms + cramps': 'cramps',
+  'menopause + hotflash': 'hotflash',
+  'digestion + bloating': 'bloating',
+  'ibs + constipation': 'ibs',
+  'cold + congestion': 'congestion',
+  'flu + fever': 'flu',
+  'acne + scarring': 'acne',
+  'aging + wrinkles': 'wrinkles',
+  'diabetes + neuropathy': 'neuropathy',
+  'thyroid + fatigue': 'thyroid',
+  'autoimmune + inflammation': 'autoimmune',
+  'adrenal + stress': 'adrenal',
+  'ptsd + anxiety': 'trauma',
+  'addiction + cravings': 'addiction',
+  'pregnancy + nausea': 'pregnancy',
+  'postpartum + depression': 'postpartum',
+  'cancer + pain': 'chronic_pain',
+  'chemo + nausea': 'nausea',
+  'surgery + pain': 'injury',
+  'stroke + paralysis': 'stroke',
+  'heart + anxiety': 'palpitations',
+  'lung + breathing': 'asthma',
+  'kidney + swelling': 'swelling',
+  'liver + detox': 'detox',
+  'gut + bloating': 'bloating',
+  'skin + itching': 'itching',
+  'joint + arthritis': 'arthritis',
+  'back + sciatica': 'sciatica',
+  'neck + headache': 'headache',
+  'shoulder + frozen': 'shoulder',
+  'knee + arthritis': 'arthritis',
+  'foot + plantar': 'plantar',
+  'hand + carpal': 'carpal',
+  'eye + strain': 'headache',
+  'ear + infection': 'cold',
+  'nose + sinus': 'sinus',
+  'throat + sore': 'sore_throat',
+  'mouth + ulcer': 'stress',
+  'teeth + pain': 'headache',
+  'gum + inflammation': 'inflammation',
+  'hair + loss': 'thyroid',
+  'nail + brittle': 'thyroid',
+  'bone + density': 'thyroid',
+  'muscle + weakness': 'fatigue',
+  'nerve + damage': 'neuropathy',
+  'blood + sugar': 'glucose',
+  'cholesterol + high': 'metabolism',
+  'weight + gain': 'metabolism',
+  'weight + loss': 'metabolism',
+  'appetite + increase': 'cravings',
+  'appetite + decrease': 'nausea',
+  'sleep + apnea': 'apnea',
+  'snore + loud': 'snoring',
+  'dream + vivid': 'dreams',
+  'nightmare + frequent': 'nightmares',
+  'mood + swing': 'mood',
+  'anger + rage': 'anger',
+  'grief + loss': 'grief',
+  'trauma + abuse': 'trauma',
+  'fear + phobia': 'fear',
+  'worry + anxiety': 'anxiety',
+  'stress + burnout': 'burnout',
+  'fatigue + exhaustion': 'exhaustion',
+  'pain + chronic': 'chronic_pain',
+  'inflammation + systemic': 'inflammation',
+  'infection + viral': 'flu',
+  'infection + bacterial': 'cold',
+  'allergy + seasonal': 'allergies',
+  'allergy + food': 'digestion',
+  'skin + dry': 'dry_skin',
+  'skin + oily': 'oily_skin',
+  'skin + sensitive': 'sensitive_skin',
+  'wound + healing': 'wounds',
+  'scar + old': 'scars',
+  'burn + recent': 'burns',
+  'sun + damage': 'sunburn',
+  'cellulite + reduction': 'cellulite',
+  'vein + varicose': 'varicose_veins',
+  'circulation + poor': 'circulation',
+  'heart + palpitation': 'palpitations',
+  'blood + pressure': 'hypertension',
+  'thyroid + underactive': 'hypothyroid',
+  'thyroid + overactive': 'hyperthyroid',
+  'adrenal + exhausted': 'adrenal_fatigue',
+  'hormone + imbalance': 'menopause',
+  'fertility + issues': 'fertility',
+  'pregnancy + first': 'pregnancy',
+  'pregnancy + second': 'pregnancy',
+  'pregnancy + third': 'pregnancy',
+  'postpartum + healing': 'postpartum',
+  'breast + feeding': 'breastfeeding',
+  'milk + supply': 'lactation',
+  'mastitis + infection': 'mastitis',
+  'prostate + enlarged': 'prostate',
+  'libido + low': 'libido',
+  'performance + anxiety': 'impotence',
+  'addiction + alcohol': 'addiction',
+  'addiction + drug': 'addiction',
+  'addiction + opioid': 'opioid',
+  'withdrawal + acute': 'withdrawal',
+  'craving + sugar': 'cravings',
+  'craving + carb': 'cravings',
+  'detox + liver': 'detox',
+  'detox + kidney': 'detox',
+  'candida + oral': 'candida',
+  'candida + vaginal': 'candida',
+  'candida + systemic': 'candida',
+  'parasite + intestinal': 'parasites',
+  'lyme + chronic': 'lyme',
+  'epstein + active': 'epstein',
+  'shingles + active': 'shingles',
+  'dementia + early': 'dementia',
+  'dementia + moderate': 'dementia',
+  'dementia + severe': 'dementia',
+  'alzheimer + early': 'alzheimer',
+  'parkinson + early': 'parkinson',
+  'ms + relapsing': 'ms',
+  'ms + progressive': 'ms',
+  'als + early': 'als',
+  'seizure + frequent': 'seizure',
+  'epilepsy + controlled': 'epilepsy',
+  'epilepsy + uncontrolled': 'epilepsy',
+  'tremor + essential': 'tremor',
+  'tremor + parkinson': 'parkinson',
+  'stroke + recent': 'stroke',
+  'stroke + old': 'stroke',
+  'concussion + acute': 'concussion',
+  'concussion + chronic': 'concussion',
+  'adhd + child': 'adhd',
+  'adhd + adult': 'adhd',
+  'add + inattentive': 'add',
+  'focus + poor': 'focus',
+  'memory + poor': 'memory',
+  'brain + fog': 'brain_fog',
+  'concentration + poor': 'concentration',
+  'learning + disability': 'learning',
+  'autism + child': 'autism',
+  'autism + adult': 'autism',
+  'aspergers + mild': 'aspergers',
+  'sensory + overload': 'sensory',
+  'hypertension + mild': 'hypertension',
+  'hypertension + severe': 'hypertension',
+  'hypotension + orthostatic': 'hypotension',
+  'palpitation + occasional': 'palpitations',
+  'palpitation + frequent': 'palpitations',
+  'arrhythmia + benign': 'arrhythmia',
+  'arrhythmia + serious': 'arrhythmia',
+  'angina + stable': 'angina',
+  'angina + unstable': 'angina',
+  'chf + mild': 'chf',
+  'chf + severe': 'chf',
+  'circulation + cold': 'circulation',
+  'circulation + numb': 'circulation',
+  'varicose + mild': 'varicose_veins',
+  'varicose + severe': 'varicose_veins',
+  'blood + type': 'blood-type-a',
+  'telomere + length': 'telomere',
+  'unbroken + chronic': 'unbroken',
+  'queen + energy': 'queen',
+  'king + energy': 'king',
+  'meditation + daily': 'meditation',
+  'meditation + beginner': 'meditation',
+  'grounding + needed': 'grounding',
+  'energy + low': 'energy',
+  'energy + high': 'energy',
+  'chakra + balance': 'chakra',
+  'aura + cleanse': 'aura',
+  'protection + needed': 'protection',
+  'xe + starter': 'xe'
 };
 
 // Base oils by skin type
@@ -1441,19 +1309,22 @@ function calculatePricing(oils, isAi = false) {
   return { price, xec };
 }
 
-// ✅ Helper: Detect condition from extensive alias mapping
+// ✅ Helper: Detect condition from extensive alias mapping with symptom intelligence
 function detectCondition(input) {
   if (!input || input.trim().length < 3) return null;
   
   const lowerInput = input.toLowerCase();
   
-  // ✅ Check direct condition matches first
+  // ✅ Step 1: Check direct condition matches
   if (ESSENTIAL_OILS[lowerInput]) {
     return lowerInput;
   }
   
-  // ✅ Check all aliases
+  // ✅ Step 2: Check condition aliases (including symptom keywords)
   for (const [condition, aliases] of Object.entries(CONDITION_ALIASES)) {
+    // Skip symptom-only categories for direct matching
+    if (condition.endsWith('_symptoms')) continue;
+    
     for (const alias of aliases) {
       if (lowerInput.includes(alias)) {
         return condition;
@@ -1461,27 +1332,118 @@ function detectCondition(input) {
     }
   }
   
-  // ✅ Check for multi-condition relationships
-  const conditions = [];
+  // ✅ Step 3: Check symptom-only aliases and map to most likely condition
+  const symptomMatches = [];
+  
+  // Pain symptoms → likely pain condition
+  if (CONDITION_ALIASES.pain_symptoms?.some(sym => lowerInput.includes(sym))) {
+    // Check for location keywords to narrow down
+    if (lowerInput.includes('back') || lowerInput.includes('spine') || lowerInput.includes('lumbar')) {
+      symptomMatches.push('backpain');
+    } else if (lowerInput.includes('head') || lowerInput.includes('migraine') || lowerInput.includes('forehead') || lowerInput.includes('temple')) {
+      symptomMatches.push('headache');
+    } else if (lowerInput.includes('leg') || lowerInput.includes('sciatic') || lowerInput.includes('shooting') || lowerInput.includes('radiating')) {
+      symptomMatches.push('sciatica');
+    } else if (lowerInput.includes('joint') || lowerInput.includes('arthritis') || lowerInput.includes('knee') || lowerInput.includes('shoulder')) {
+      symptomMatches.push('joint');
+    } else {
+      symptomMatches.push('musclepain'); // Default pain condition
+    }
+  }
+  
+  // Inflammation symptoms → inflammation or specific condition
+  if (CONDITION_ALIASES.inflammation_symptoms?.some(sym => lowerInput.includes(sym))) {
+    if (lowerInput.includes('joint')) {
+      symptomMatches.push('arthritis');
+    } else {
+      symptomMatches.push('inflammation');
+    }
+  }
+  
+  // Fatigue symptoms → fatigue or underlying cause
+  if (CONDITION_ALIASES.fatigue_symptoms?.some(sym => lowerInput.includes(sym))) {
+    if (lowerInput.includes('thyroid') || lowerInput.includes('hormone') || lowerInput.includes('metabolism')) {
+      symptomMatches.push('thyroid');
+    } else if (lowerInput.includes('adrenal') || lowerInput.includes('stress') || lowerInput.includes('burnout')) {
+      symptomMatches.push('adrenal');
+    } else {
+      symptomMatches.push('fatigue');
+    }
+  }
+  
+  // Digestive symptoms → digestive condition
+  if (CONDITION_ALIASES.digestive_symptoms?.some(sym => lowerInput.includes(sym))) {
+    if (lowerInput.includes('ibs') || lowerInput.includes('irritable') || lowerInput.includes('spastic')) {
+      symptomMatches.push('ibs');
+    } else if (lowerInput.includes('reflux') || lowerInput.includes('heartburn') || lowerInput.includes('gerd')) {
+      symptomMatches.push('gerd');
+    } else {
+      symptomMatches.push('digestion');
+    }
+  }
+  
+  // Respiratory symptoms → respiratory condition
+  if (CONDITION_ALIASES.respiratory_symptoms?.some(sym => lowerInput.includes(sym))) {
+    if (lowerInput.includes('asthma') || lowerInput.includes('wheeze') || lowerInput.includes('bronchial')) {
+      symptomMatches.push('asthma');
+    } else if (lowerInput.includes('allergy') || lowerInput.includes('pollen') || lowerInput.includes('hay fever')) {
+      symptomMatches.push('allergies');
+    } else {
+      symptomMatches.push('congestion');
+    }
+  }
+  
+  // Skin symptoms → skin condition
+  if (CONDITION_ALIASES.skin_symptoms?.some(sym => lowerInput.includes(sym))) {
+    if (lowerInput.includes('acne') || lowerInput.includes('pimple') || lowerInput.includes('breakout')) {
+      symptomMatches.push('acne');
+    } else if (lowerInput.includes('eczema') || lowerInput.includes('atopic') || lowerInput.includes('dermatitis')) {
+      symptomMatches.push('eczema');
+    } else if (lowerInput.includes('psoriasis') || lowerInput.includes('plaque') || lowerInput.includes('scaly')) {
+      symptomMatches.push('psoriasis');
+    } else {
+      symptomMatches.push('dry_skin'); // Default skin condition
+    }
+  }
+  
+  // Emotional symptoms → emotional condition
+  if (CONDITION_ALIASES.emotional_symptoms?.some(sym => lowerInput.includes(sym))) {
+    if (lowerInput.includes('panic') || lowerInput.includes('attack') || lowerInput.includes('hyperventilate')) {
+      symptomMatches.push('panic');
+    } else if (lowerInput.includes('depress') || lowerInput.includes('sad') || lowerInput.includes('hopeless') || lowerInput.includes('worthless')) {
+      symptomMatches.push('depression');
+    } else if (lowerInput.includes('trauma') || lowerInput.includes('abuse') || lowerInput.includes('ptsd') || lowerInput.includes('post traumatic')) {
+      symptomMatches.push('trauma');
+    } else {
+      symptomMatches.push('stress'); // Default emotional condition
+    }
+  }
+  
+  // ✅ Return first symptom-based match if no direct alias match
+  if (symptomMatches.length > 0) {
+    return symptomMatches[0];
+  }
+  
+  // ✅ Step 4: Check for multi-condition relationships
+  const detectedConditions = [];
   for (const [condition, aliases] of Object.entries(CONDITION_ALIASES)) {
+    if (condition.endsWith('_symptoms')) continue; // Skip symptom-only categories
     for (const alias of aliases) {
       if (lowerInput.includes(alias)) {
-        conditions.push(condition);
+        detectedConditions.push(condition);
       }
     }
   }
   
-  // ✅ If multiple conditions detected, check relationships
-  if (conditions.length > 1) {
-    const comboKey = conditions.slice(0, 2).sort().join(' + ');
+  if (detectedConditions.length > 1) {
+    const comboKey = detectedConditions.slice(0, 2).sort().join(' + ');
     if (CONDITION_RELATIONSHIPS[comboKey]) {
       return CONDITION_RELATIONSHIPS[comboKey];
     }
-    // Default to first condition if no relationship mapping
-    return conditions[0];
+    return detectedConditions[0]; // Default to first
   }
   
-  return conditions[0] || null;
+  return detectedConditions[0] || null;
 }
 
 // Blend name generator
@@ -1694,7 +1656,7 @@ function getBenefits(condition, userInput = null) {
     joint: "Supports joint mobility and reduces inflammation associated with cartilage stress.",
     digestion: "Aids digestive comfort and reduces bloating through gentle warming action.",
     menopause: "Balances hormonal fluctuations and eases hot flashes with floral synergy.",
-    // ... (add more as needed, or use fallback)
+    // ... add more as needed, or use fallback
   };
   return userInput 
     ? "Personalized support crafted for your unique wellness journey." 
