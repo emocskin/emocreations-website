@@ -9,11 +9,10 @@ import Link from 'next/link';
 
 // ✅ Install with: npm install xrpl
 import { Client } from 'xrpl';
-// ✅ REMOVED: OpenAI import no longer needed client-side (proxied via backend)
 
 export default function BlendPage() {
   const [product, setProduct] = useState(null);
-  const [verificationState, setVerificationState] = useState('idle'); // idle | verifying | unlocked | insufficient
+  const [verificationState, setVerificationState] = useState('idle');
   const [xecBalance, setXecBalance] = useState(0);
   const [usdValue, setUsdValue] = useState(0);
   
@@ -25,16 +24,15 @@ export default function BlendPage() {
   
   const xummRef = useRef(null);
   const xrplClientRef = useRef(null);
-  // ✅ REMOVED: poeClientRef no longer needed (API calls proxied via backend)
 
   // ✅ XEC Token Configuration - CORRECT ISSUER
   const XEC_CONFIG = {
     currency: 'XEC',
-    issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX', // ✅ YOUR XEC ISSUER
-    requiredUsdThreshold: 25, // Minimum $25 USD worth of XEC
+    issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX',
+    requiredUsdThreshold: 25,
   };
 
-  // ✅ Predefined blends (fallback if AI not used)
+  // ✅ Predefined blends
   const PREDEFINED_BLENDS = {
     'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156, slug: 'unbroken' },
     'xe': { name: 'XE – Everybody\'s Oil', price: 38, xec: 67, slug: 'xe' },
@@ -52,13 +50,47 @@ export default function BlendPage() {
     'metabolism': { name: 'Metabolism Boost Elixir', price: 58, xec: 103, slug: 'metabolism' }
   };
 
+  // ✅ Condition keyword detection (maps user input to known conditions)
+  const detectCondition = (input) => {
+    if (!input) return null;
+    
+    const lowerInput = input.toLowerCase();
+    
+    const conditionMap = {
+      'menopause': ['menopause', 'hot flash', 'hormone', 'hormonal'],
+      'stress': ['stress', 'anxiety', 'anxious', 'calm', 'calming', 'nervous'],
+      'headache': ['headache', 'head ache', 'migraine', 'head pain'],
+      'sciatic': ['sciatic', 'sciatica', 'lower back', 'nerve pain'],
+      'joint': ['joint', 'arthritis', 'knee', 'elbow', 'shoulder pain'],
+      'insomnia': ['sleep', 'insomnia', 'restless', 'bedtime', 'night'],
+      'musclepain': ['muscle', 'muscle pain', 'sore', 'cramp', 'spasm'],
+      'digestion': ['digest', 'digestion', 'bloating', 'stomach', 'gut', 'nausea'],
+      'lupus': ['lupus', 'autoimmune', 'inflammation'],
+      'shoulder': ['shoulder', 'neck pain', 'upper back'],
+      'glucose': ['glucose', 'blood sugar', 'diabetes', 'circulation'],
+      'metabolism': ['metabolism', 'weight', 'energy', 'thyroid'],
+      'opioid': ['opioid', 'recovery', 'withdrawal', 'pain management'],
+      'blood-type-a': ['blood type', 'type a'],
+      'telomere': ['telomere', 'anti-aging', 'longevity', 'cellular'],
+      'unbroken': ['unbroken', 'chronic illness', 'invisible illness'],
+      'queen': ['queen', 'self-love', 'confidence', 'empowerment'],
+      'king': ['king', 'strength', 'leadership', 'confidence'],
+    };
+    
+    for (const [condition, keywords] of Object.entries(conditionMap)) {
+      if (keywords.some(keyword => lowerInput.includes(keyword))) {
+        return condition;
+      }
+    }
+    
+    return null;
+  };
+
   useEffect(() => {
-    // ✅ Load product from URL or default
     const urlParams = new URLSearchParams(window.location.search);
     const blendSlug = urlParams.get('blend') || 'xe';
     setProduct(PREDEFINED_BLENDS[blendSlug] || PREDEFINED_BLENDS['xe']);
 
-    // ✅ Initialize XRPL client
     const initXrplClient = async () => {
       try {
         const client = new Client('wss://s1.ripple.com:51233');
@@ -70,9 +102,6 @@ export default function BlendPage() {
     };
     initXrplClient();
 
-    // ✅ REMOVED: Poe/OpenAI client initialization (now proxied via backend for security)
-    // Client-side Poe API calls exposed API key - all AI generation now goes through /api/generate-blend
-
     return () => {
       if (xrplClientRef.current?.isConnected) {
         xrplClientRef.current.disconnect();
@@ -80,14 +109,13 @@ export default function BlendPage() {
     };
   }, []);
 
-  // ✅ FIXED: PayPal SDK loading via useEffect
+  // ✅ PayPal SDK loading
   useEffect(() => {
     if (typeof window === 'undefined' || !product) return;
     if (document.getElementById('paypal-sdk')) return;
 
     const script = document.createElement('script');
     script.id = 'paypal-sdk';
-    // ✅ FIXED: Removed trailing spaces from URL
     script.src = 'https://www.paypal.com/sdk/js?client-id=ATmYVsWxvBzV6cJgPrC_AvCmCi9WfjP3u4Mv8uyME_mvlw0zBKQ06-BNylvCY_IOMoBuQFyPvdLM1xZ6&currency=USD';
     script.async = true;
     
@@ -108,20 +136,15 @@ export default function BlendPage() {
               const details = await actions.order.capture();
               const targetProduct = generatedBlend || product;
               
-              // ✅ FIXED: Added complete payload with AI fields + accounting
               await fetch('/api/submit-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   email: details.payer.email_address,
                   blend: targetProduct.slug || 'custom-ai-blend',
-                  
-                  // ✅ AI blend metadata
                   blendRecipe: generatedBlend?.recipe,
                   blendName: generatedBlend?.name,
                   blendDescription: generatedBlend?.description,
-                  
-                  // ✅ Payment accounting fields
                   orderId: details.id,
                   paymentMethod: 'paypal',
                   usdValue: targetProduct.price,
@@ -149,7 +172,7 @@ export default function BlendPage() {
     };
   }, [product, generatedBlend]);
 
-  // ✅ UPDATED: Poe AI: Generate Custom Blend (via backend proxy for security) + DEBUG ALERTS
+  // ✅ UPDATED: Generate Custom Blend with CONDITION DETECTION
   const handleGenerateBlend = async () => {
     if (!userInput.trim()) {
       setGenerationError('Please describe your wellness needs first.');
@@ -160,91 +183,51 @@ export default function BlendPage() {
     setGenerationError(null);
     setGeneratedBlend(null);
 
-    // ✅ DEBUG: Log start
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 handleGenerateBlend called');
-      console.log('userInput:', userInput);
-      console.log('useAI will be:', userInput?.length > 30);
-    }
-
     try {
-      // ✅ Call OUR backend endpoint (not Poe directly) - API key stays secure on server
+      // ✅ Detect condition from user input
+      const detectedCondition = detectCondition(userInput);
+      
+      // ✅ Determine if we should use AI (long input) or rule-based (known condition)
+      const useAI = userInput.length > 50 && !detectedCondition;
+      
       const response = await fetch('/api/generate-blend', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // ✅ Rule-based fields (for known conditions)
-          condition: null, // Optional: 'stress', 'headache', etc.
-          scentPreference: null, // Optional: 'citrus', 'floral', etc.
-          skinType: null, // Optional: 'normal', 'dry', etc.
-          
-          // ✅ AI fields (for custom requests)
-          userInput: userInput, // The user's free-text description
-          useAI: userInput?.length > 30 // Force AI for detailed requests
+          // ✅ Send detected condition (this fixes the menopause issue!)
+          condition: detectedCondition,
+          scentPreference: null,
+          skinType: null,
+          userInput: userInput,
+          useAI: useAI
         })
       });
 
-      // ✅ DEBUG: Log response status
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📡 Response status:', response.status, response.ok);
-      }
-
       const data = await response.json();
-
-      // ✅ DEBUG: Log full response
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📦 Response data:', data);
-      }
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
-      // ✅ Use the blend data returned from our backend (same format whether rule-based or AI)
       const blendData = data.blend;
       
-      // ✅ Validate required fields
       if (!blendData?.name || !blendData?.recipe || !Array.isArray(blendData.recipe)) {
         console.error('❌ Invalid blend structure:', blendData);
         throw new Error('Blend response missing required fields');
       }
 
-      // ✅ DEBUG: Alert on API success
-      if (process.env.NODE_ENV === 'development') {
-        alert(`✅ API Success!\nBlend: ${blendData.name}\nMethod: ${data.method || 'unknown'}`);
-      }
-
-      // ✅ Update state with NEW object references to force re-render
       setGeneratedBlend({ ...blendData });
       setProduct({ ...blendData });
-
-      // ✅ DEBUG: Confirm state update after React processes it
-      if (process.env.NODE_ENV === 'development') {
-        setTimeout(() => {
-          alert(`🔄 State updated:\ngeneratedBlend = ${!!generatedBlend}\nproduct = ${!!product}\nName: ${blendData.name}`);
-        }, 100);
-      }
       
     } catch (error) {
       console.error('Blend generation error:', error);
-      
-      // ✅ DEBUG: Alert on error
-      if (process.env.NODE_ENV === 'development') {
-        alert(`💥 Error: ${error.message}\n\nCheck console for details.`);
-      }
-      
       setGenerationError(error.message || 'Failed to generate blend. Please try again.');
     } finally {
       setIsGenerating(false);
-      
-      // ✅ DEBUG: Log completion
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔄 setIsGenerating(false)');
-      }
     }
   };
 
-  // ✅ XEC Wallet Verification (with complete AI blend payload)
+  // ✅ XEC Wallet Verification
   const handleVerifyWallet = async () => {
     const targetProduct = generatedBlend || product;
     if (!targetProduct || !xrplClientRef.current) {
@@ -255,11 +238,9 @@ export default function BlendPage() {
     setVerificationState('verifying');
 
     try {
-      // ✅ Load Xaman SDK dynamically
       if (!window.Xumm) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
-          // ✅ FIXED: Removed trailing spaces from URL
           script.src = 'https://xaman.app/assets/cdn/xumm.min.js';
           script.onload = resolve;
           script.onerror = reject;
@@ -285,7 +266,6 @@ export default function BlendPage() {
         }, 60000);
       });
 
-      // ✅ Check XEC balance with CORRECT issuer
       const response = await xrplClientRef.current.request({
         method: 'account_lines',
         account: accountAddress,
@@ -301,14 +281,11 @@ export default function BlendPage() {
         xecBalance = parseFloat(trustline.balance);
       }
 
-      // ✅ FIXED: Fetch XEC price with improved fallback logic
-      let xecPriceUsd = 0.0004; // More realistic conservative fallback
+      let xecPriceUsd = 0.0004;
       try {
-        // ✅ FIXED: Removed trailing spaces from URL
         const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
         if (priceResponse.ok) {
           const priceData = await priceResponse.json();
-          // Try multiple possible keys (CoinGecko API variations)
           xecPriceUsd = priceData.ecash?.usd 
             || priceData['ecash']?.usd 
             || priceData.xec?.usd 
@@ -323,27 +300,20 @@ export default function BlendPage() {
       setXecBalance(xecBalance);
       setUsdValue(usdValue);
 
-      // ✅ Verify threshold
       if (xecBalance >= targetProduct.xec && usdValue >= XEC_CONFIG.requiredUsdThreshold) {
         setVerificationState('unlocked');
         
-        // ✅ FIXED: Complete payload with all AI blend fields + accounting metadata
         await fetch('/api/verify-unlock', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            // Core identification
             address: accountAddress,
             blendSlug: targetProduct.slug,
-            
-            // ✅ AI blend metadata (sent if generatedBlend exists)
             blendRecipe: generatedBlend?.recipe,
             blendName: generatedBlend?.name,
             blendDescription: generatedBlend?.description,
             blendInstructions: generatedBlend?.instructions,
-            userPrompt: userInput, // Original AI generation prompt
-            
-            // ✅ Payment accounting fields
+            userPrompt: userInput,
             paymentMethod: 'xec',
             xecAmount: targetProduct.xec,
             usdValue: usdValue,
@@ -352,7 +322,6 @@ export default function BlendPage() {
           })
         });
         
-        // ✅ FIXED: Redirect with payment parameter for blend-delivery page
         window.location.href = `/blend-delivery?blend=${targetProduct.slug}&verified=true&ai=${!!generatedBlend}&payment=xec`;
       } else {
         setVerificationState('insufficient');
@@ -373,7 +342,6 @@ export default function BlendPage() {
     }
   };
 
-  // ✅ Use a predefined blend
   const handleSelectPredefined = (slug) => {
     setGeneratedBlend(null);
     setUserInput('');
@@ -461,65 +429,50 @@ export default function BlendPage() {
         </section>
       )}
 
-      {/* Blend Recipe Display - DEBUG BORDER ADDED */}
+      {/* Blend Recipe Display */}
       {(generatedBlend || !generatedBlend) && (
         <div className="py-12 px-6 max-w-4xl mx-auto">
-          {/* ✅ DEBUG: Bright border to detect if this section renders */}
-          <div className="border-2 border-pink-500/50 p-4 rounded-xl">
-            <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
-              <h2 className="text-2xl font-bold mb-4">
-                {generatedBlend ? 'Your Personalized Recipe' : 'Blend Includes:'}
-              </h2>
-              
-              {generatedBlend ? (
-                <>
-                  {/* ✅ DEBUG: Show state values */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="bg-purple-900/30 p-2 rounded mb-4 text-xs text-purple-300">
-                      DEBUG: generatedBlend = {JSON.stringify({
-                        name: generatedBlend.name,
-                        recipeCount: generatedBlend.recipe?.length,
-                        isAi: generatedBlend.isAi
-                      }, null, 2)}
-                    </div>
-                  )}
-                  
-                  <p className="text-gray-300 mb-4 italic">{generatedBlend.description}</p>
-                  <ul className="text-gray-300 space-y-3 mb-6">
-                    {generatedBlend.recipe?.map((item, idx) => (
-                      <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
-                        <span>• {item.oil} — {item.purpose}</span>
-                        <span className="text-turquoise font-medium">{item.drops} drops</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="bg-black p-4 rounded-lg mb-4">
-                    <p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setGeneratedBlend(null);
-                      setUserInput('');
-                      setProduct(PREDEFINED_BLENDS['xe']);
-                    }}
-                    className="text-sm text-gray-400 hover:text-turquoise underline"
-                  >
-                    ← Try a predefined blend instead
-                  </button>
-                </>
-              ) : (
-                <ul className="text-gray-300 space-y-2">
-                  {targetProduct.name === 'XE – Everybody\'s Oil' && (
-                    <>
-                      <li>• 10 drops Lavender — calms nerves, reduces inflammation</li>
-                      <li>• 8 drops Roman Chamomile — soothes tissue</li>
-                      <li>• 6 drops Bergamot FCF — uplifts mood</li>
-                    </>
-                  )}
-                  {/* Add more predefined blend details as needed */}
+          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
+            <h2 className="text-2xl font-bold mb-4">
+              {generatedBlend ? 'Your Personalized Recipe' : 'Blend Includes:'}
+            </h2>
+            
+            {generatedBlend ? (
+              <>
+                <p className="text-gray-300 mb-4 italic">{generatedBlend.description}</p>
+                <ul className="text-gray-300 space-y-3 mb-6">
+                  {generatedBlend.recipe.map((item, idx) => (
+                    <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
+                      <span>• {item.oil} — {item.purpose}</span>
+                      <span className="text-turquoise font-medium">{item.drops} drops</span>
+                    </li>
+                  ))}
                 </ul>
-              )}
-            </div>
+                <div className="bg-black p-4 rounded-lg mb-4">
+                  <p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setGeneratedBlend(null);
+                    setUserInput('');
+                    setProduct(PREDEFINED_BLENDS['xe']);
+                  }}
+                  className="text-sm text-gray-400 hover:text-turquoise underline"
+                >
+                  ← Try a predefined blend instead
+                </button>
+              </>
+            ) : (
+              <ul className="text-gray-300 space-y-2">
+                {targetProduct.name === 'XE – Everybody\'s Oil' && (
+                  <>
+                    <li>• 10 drops Lavender — calms nerves, reduces inflammation</li>
+                    <li>• 8 drops Roman Chamomile — soothes tissue</li>
+                    <li>• 6 drops Bergamot FCF — uplifts mood</li>
+                  </>
+                )}
+              </ul>
+            )}
           </div>
         </div>
       )}
@@ -582,7 +535,7 @@ export default function BlendPage() {
         </div>
       </section>
 
-      {/* Predefined Blends Quick Select (only show if no AI blend generated) */}
+      {/* Predefined Blends Quick Select */}
       {!generatedBlend && (
         <section className="py-12 px-6 max-w-4xl mx-auto">
           <h3 className="text-xl font-bold mb-4 text-center">Or Choose a Predefined Blend</h3>
@@ -617,46 +570,11 @@ export default function BlendPage() {
       <footer className="py-10 px-6 text-center text-gray-500 text-sm border-t border-gray-800">
         <p className="mb-4">
           Follow the science: 
-          {/* ✅ FIXED: Removed trailing spaces from social URLs */}
           <a href="https://instagram.com/emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a> • 
           <a href="https://tiktok.com/@emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a>
         </p>
         <p>© 2025 EmoCreations.skin — Crafted with cellular wellness in mind.</p>
       </footer>
-
-      {/* ✅ DEBUG: Force Re-render Button (development only) */}
-      {process.env.NODE_ENV === 'development' && (
-        <button
-          onClick={() => {
-            console.log('🔄 Forcing re-render');
-            setGeneratedBlend(prev => prev ? {...prev, _debug: Date.now()} : prev);
-            setProduct(prev => prev ? {...prev, _debug: Date.now()} : prev);
-            alert('🔄 Re-render triggered! Check if blend appears.');
-          }}
-          className="fixed bottom-4 left-4 bg-orange-600 hover:bg-orange-500 text-white py-2 px-4 rounded font-medium transition z-50 shadow-lg"
-        >
-          🔄 Force Re-render
-        </button>
-      )}
-
-      {/* ✅ DEBUG: Loading Overlay with More Details */}
-      {isGenerating && process.env.NODE_ENV === 'development' && (
-        <div className="fixed inset-0 bg-black/90 flex flex-col items-center justify-center z-50">
-          <div className="w-12 h-12 border-4 border-turquoise border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-white text-lg font-medium">Generating your blend...</p>
-          <p className="text-gray-400 text-sm mt-2">Input: "{userInput?.slice(0, 50)}{userInput?.length > 50 ? '...' : ''}"</p>
-          <p className="text-gray-500 text-xs mt-1">This should take &lt;2 seconds for rule-based blends</p>
-          <button
-            onClick={() => {
-              setIsGenerating(false);
-              setGenerationError('Generation cancelled by user');
-            }}
-            className="mt-4 text-red-400 hover:text-red-300 text-sm underline"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
     </div>
   );
 }
