@@ -2,25 +2,24 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-// ✅ Rate limiting imports
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
-// ✅ Supabase client - USE SERVER-SIDE ENV VARS (no NEXT_PUBLIC_)
+// ✅ Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // ✅ Server-side only - never exposed to browser
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ✅ Poe/OpenAI client - SERVER-SIDE ONLY (API key secure)
+// ✅ Poe/OpenAI client
 const poeClient = process.env.POE_API_KEY 
   ? new OpenAI({
       apiKey: process.env.POE_API_KEY,
-      baseURL: 'https://api.poe.com/v1', // ✅ Trimmed
+      baseURL: 'https://api.poe.com/v1',
     })
   : null;
 
-// ✅ Rate Limiter: Lazy initialization to avoid cold start delays
+// ✅ Rate Limiter
 let ratelimit;
 const getRatelimit = () => {
   if (!ratelimit && process.env.UPSTASH_REDIS_REST_URL) {
@@ -30,7 +29,6 @@ const getRatelimit = () => {
     });
     ratelimit = new Ratelimit({
       redis,
-      // ✅ Launch-friendly limits: 10 AI requests per 60 seconds per IP
       limiter: Ratelimit.slidingWindow(10, '60 s'),
       analytics: true,
       prefix: 'emocreations:blend-gen',
@@ -39,7 +37,7 @@ const getRatelimit = () => {
   return ratelimit;
 };
 
-// ✅ Your essential oil library (from receipts + formulations)
+// ✅✅✅ COMPLETE ESSENTIAL OIL LIBRARY - ALL 17 CONDITIONS MAPPED
 const ESSENTIAL_OILS = {
   stress: [
     { name: "Lavender", amount: "10 drops", purpose: "Calms nerves, reduces inflammation" },
@@ -86,6 +84,52 @@ const ESSENTIAL_OILS = {
     { name: "Geranium", amount: "8 drops", purpose: "Reduces hot flashes" },
     { name: "Ylang Ylang", amount: "6 drops", purpose: "Emotional balance" }
   ],
+  shoulder: [
+    { name: "Lavender", amount: "8 drops", purpose: "Relieves tension" },
+    { name: "Peppermint", amount: "6 drops", purpose: "Cooling pain relief" },
+    { name: "Rosemary", amount: "6 drops", purpose: "Improves circulation" }
+  ],
+  glucose: [
+    { name: "Cinnamon", amount: "6 drops", purpose: "Supports healthy glucose metabolism" },
+    { name: "Ginger", amount: "8 drops", purpose: "Improves circulation" },
+    { name: "Lemon", amount: "6 drops", purpose: "Antioxidant support" }
+  ],
+  metabolism: [
+    { name: "Grapefruit", amount: "8 drops", purpose: "Supports healthy metabolism" },
+    { name: "Peppermint", amount: "6 drops", purpose: "Energizing, reduces cravings" },
+    { name: "Ginger", amount: "6 drops", purpose: "Thermogenic, aids digestion" }
+  ],
+  opioid: [
+    { name: "Lavender", amount: "10 drops", purpose: "Calms withdrawal anxiety" },
+    { name: "Frankincense", amount: "8 drops", purpose: "Supports emotional healing" },
+    { name: "Bergamot FCF", amount: "6 drops", purpose: "Uplifts mood, reduces cravings" }
+  ],
+  'blood-type-a': [
+    { name: "Lavender", amount: "10 drops", purpose: "Calms sensitive digestion" },
+    { name: "Chamomile", amount: "8 drops", purpose: "Soothes stress response" },
+    { name: "Ylang Ylang", amount: "6 drops", purpose: "Balances emotions" }
+  ],
+  telomere: [
+    { name: "Frankincense", amount: "10 drops", purpose: "Cellular support, anti-aging" },
+    { name: "Helichrysum", amount: "8 drops", purpose: "Tissue regeneration" },
+    { name: "Myrrh", amount: "6 drops", purpose: "Antioxidant protection" }
+  ],
+  unbroken: [
+    { name: "Lavender", amount: "10 drops", purpose: "Calms chronic pain" },
+    { name: "Frankincense", amount: "10 drops", purpose: "Supports resilience" },
+    { name: "Helichrysum", amount: "8 drops", purpose: "Tissue trauma repair" }
+  ],
+  queen: [
+    { name: "Rose", amount: "5 drops", purpose: "Promotes self-love, balances hormones" },
+    { name: "Ylang Ylang", amount: "7 drops", purpose: "Enhances confidence, reduces stress" },
+    { name: "Geranium", amount: "6 drops", purpose: "Supports emotional balance" }
+  ],
+  king: [
+    { name: "Cedarwood", amount: "8 drops", purpose: "Grounding, promotes strength" },
+    { name: "Frankincense", amount: "8 drops", purpose: "Supports leadership energy" },
+    { name: "Pine", amount: "6 drops", purpose: "Invigorating, clears mind" }
+  ],
+  // ✅ Fallback for unmatched conditions
   default: [
     { name: "Lavender", amount: "10 drops", purpose: "Universal calming agent" },
     { name: "Frankincense", amount: "8 drops", purpose: "Cellular support" },
@@ -116,10 +160,10 @@ function transformOilsToRecipe(oils) {
 
 // ✅ Helper: Calculate price/xec based on oil count + complexity
 function calculatePricing(oils, isAi = false) {
-  const basePrice = 38; // XE baseline
+  const basePrice = 38;
   const complexityMultiplier = Math.min(1 + (oils.length - 3) * 0.15, 2.0);
   const price = Math.round(basePrice * complexityMultiplier);
-  const xec = Math.ceil(price / 0.37); // Approx XEC conversion
+  const xec = Math.ceil(price / 0.37);
   return { price, xec };
 }
 
@@ -134,7 +178,17 @@ function getBlendName(condition, userInput = null) {
     digestion: "Digestive Balance Elixir",
     lupus: "The Unbroken Ointment",
     sciatica: "Deep Relief Sciatic Soother",
-    menopause: "Menopause Balance Blend"
+    menopause: "Menopause Balance Blend",
+    shoulder: "Shoulder Freedom Floral Therapy",
+    glucose: "Glucose Balance Circulation Therapy",
+    metabolism: "Metabolism Boost Elixir",
+    opioid: "Opioid Recovery Blend",
+    'blood-type-a': "Blood Type A Blend",
+    telomere: "Telomere Repair Serum",
+    unbroken: "The Unbroken Ointment",
+    queen: "Queen's Oil",
+    king: "The King's Oil",
+    xe: "XE – Everybody's Oil"
   };
   return userInput 
     ? `Custom AI Blend: ${userInput.slice(0, 20)}...` 
@@ -152,7 +206,16 @@ function getBenefits(condition, userInput = null) {
     digestion: "Aids digestive comfort and reduces bloating through gentle warming action.",
     lupus: "Offers ceremonial support for bodies that carry invisible battles.",
     sciatica: "Targets nerve pain and muscle tension along the sciatic pathway.",
-    menopause: "Balances hormonal fluctuations and eases hot flashes with floral synergy."
+    menopause: "Balances hormonal fluctuations and eases hot flashes with floral synergy.",
+    shoulder: "Releases shoulder tension and restores freedom of movement.",
+    glucose: "Supports healthy glucose metabolism and circulation.",
+    metabolism: "Energizes metabolism and supports healthy weight management.",
+    opioid: "Supports emotional healing and reduces cravings during recovery.",
+    'blood-type-a': "Gentle support for Type A sensitive constitution.",
+    telomere: "Cellular support for healthy aging and longevity.",
+    unbroken: "Honors your resilience through chronic illness challenges.",
+    queen: "Empowers self-love, confidence, and divine feminine energy.",
+    king: "Strengthens leadership, grounding, and divine masculine energy."
   };
   return userInput 
     ? "Personalized support crafted for your unique wellness journey." 
@@ -171,7 +234,7 @@ function getNotes(condition) {
   if (condition === 'headache' || condition === 'sciatica') {
     note += " Avoid contact with eyes. If eye contact occurs, flush with a carrier oil, not water.";
   }
-  if (['digestion', 'menopause', 'lupus'].includes(condition)) {
+  if (['digestion', 'menopause', 'lupus', 'glucose', 'opioid'].includes(condition)) {
     note += " Consult your healthcare provider before use, especially if pregnant, nursing, or taking medications.";
   }
   
@@ -208,12 +271,9 @@ async function generateAiBlend(userInput) {
   });
 
   const responseText = completion.choices[0].message.content.trim();
-  
-  // Parse JSON (handle markdown code blocks)
   const cleanJson = responseText.replace(/```json\s*|\s*```/g, '').trim();
   const blendData = JSON.parse(cleanJson);
 
-  // Validate required fields
   if (!blendData.name || !blendData.recipe || !Array.isArray(blendData.recipe)) {
     throw new Error('AI response missing required fields');
   }
@@ -225,7 +285,6 @@ export async function POST(request) {
   try {
     const body = await request.json();
     
-    // ✅ Support BOTH rule-based and AI inputs
     const {
       condition,
       scentPreference,
@@ -234,7 +293,7 @@ export async function POST(request) {
       useAI = false
     } = body;
 
-    // ✅ RATE LIMIT CHECK: Only apply to AI requests
+    // ✅ RATE LIMIT CHECK
     const isAiRequest = useAI || (userInput && userInput.length > 30);
     
     if (isAiRequest) {
@@ -248,7 +307,6 @@ export async function POST(request) {
         const { success, limit, reset, remaining } = await limiter.limit(ip);
         
         if (!success) {
-          // ✅ FIXED: Proper Supabase error handling (no .catch())
           if (supabase) {
             const { error: rateLimitError } = await supabase.from('rate_limit_events').insert({
               ip: ip.slice(0, 45),
@@ -303,8 +361,16 @@ export async function POST(request) {
 
     // ✅ Option 2: Rule-based generation (default or fallback)
     if (!blendData) {
+      // ✅ FIX: Use condition from frontend, fallback to 'default' only if truly empty
       const selectedCondition = condition || 'default';
+      
+      // ✅ FIX: Get oils for the SPECIFIC condition (not just default)
       const oils = ESSENTIAL_OILS[selectedCondition] || ESSENTIAL_OILS.default;
+      
+      // Debug log to verify condition is being received
+      console.log('🔍 Condition received:', condition);
+      console.log('🔍 Selected condition:', selectedCondition);
+      console.log('🔍 Oils found:', oils ? 'YES' : 'NO', '- Using:', selectedCondition);
       
       let adjustedOils = oils;
       if (scentPreference === 'citrus') {
@@ -331,7 +397,7 @@ export async function POST(request) {
       blendId = blendData.slug;
     }
 
-    // ✅ FIXED: Proper Supabase logging (no .catch())
+    // ✅ Log to Supabase
     if (supabase) {
       const { error: logError } = await supabase.from('access_logs').insert({
         action: 'blend_generated',
@@ -351,11 +417,9 @@ export async function POST(request) {
       
       if (logError) {
         console.warn('Supabase logging failed:', logError);
-        // Don't fail the response if logging fails
       }
     }
 
-    // ✅ Add rate limit headers to successful responses
     const headers = {};
     const limiter = getRatelimit();
     if (limiter && isAiRequest) {
