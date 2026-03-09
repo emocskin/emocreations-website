@@ -727,7 +727,7 @@ export default function BlendPage() {
     }
   };
 
-  // ✅✅✅ NEW: Handle Unlock After Preview
+  // ✅✅✅ NEW: Handle Unlock After Preview (with proper Xaman connection)
   const handleUnlockBlend = async (paymentMethod) => {
     if (!generatedBlend?.slug) {
       setGenerationError('No blend to unlock. Please generate a blend first.');
@@ -738,79 +738,129 @@ export default function BlendPage() {
     setGenerationError(null);
 
     try {
-      let authHeaders = {};
-      
       if (paymentMethod === 'xec') {
-        // ✅ Trigger Xaman wallet connection for XEC verification
-        const unlockResponse = await fetch('/api/unlock-xec', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ blendSlug: generatedBlend.slug })
+        // ✅ STEP 1: Connect Xaman wallet (same as handleVerifyWallet)
+        if (!window.Xumm) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://xaman.app/assets/cdn/xumm.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.body.appendChild(script);
+          });
+        }
+
+        const XUMM_API_KEY = process.env.NEXT_PUBLIC_XUMM_API_KEY || 'your-api-key-here';
+        const xumm = new window.Xumm(XUMM_API_KEY);
+        xummRef.current = xumm;
+
+        await xumm.authorize();
+
+        // ✅ STEP 2: Get XRPL address from Xaman
+        const xrplAddress = await new Promise((resolve, reject) => {
+          const onReady = () => {
+            xumm.user.account.then(resolve).catch(reject);
+            xumm.off('success', onReady);
+          };
+          xumm.on('success', onReady);
+          setTimeout(() => {
+            xumm.off('success', onReady);
+            reject(new Error('Wallet connection timeout'));
+          }, 60000);
         });
+
+        // ✅ STEP 3: Verify XEC balance meets threshold
+        const response = await xrplClientRef.current.request({
+          method: 'account_lines',
+          account: xrplAddress,
+          peer: XEC_CONFIG.issuer,
+        });
+
+        let xecBalance = 0;
+        const trustline = response.result.lines.find(
+          line => line.currency === XEC_CONFIG.currency && line.account === XEC_CONFIG.issuer
+        );
         
-        const unlockData = await unlockResponse.json();
-        
-        if (!unlockResponse.ok) {
-          throw new Error(unlockData.error || 'XEC verification failed');
+        if (trustline) {
+          xecBalance = parseFloat(trustline.balance);
+        }
+
+        let xecPriceUsd = 0.0004;
+        try {
+          const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
+          if (priceResponse.ok) {
+            const priceData = await priceResponse.json();
+            xecPriceUsd = priceData.ecash?.usd || priceData['ecash']?.usd || priceData.xec?.usd || 0.0004;
+          }
+        } catch (e) {
+          console.warn('Using fallback XEC price:', e);
         }
         
-        // ✅ Get XRPL address from Xaman flow (stored in localStorage or from response)
-        const xrplAddress = unlockData.address || localStorage.getItem('xrplAddress');
-        
-        if (!xrplAddress) {
-          throw new Error('Wallet address not found. Please connect wallet first.');
+        const usdValue = xecBalance * xecPriceUsd;
+
+        // ✅ STEP 4: Check if balance meets threshold
+        if (xecBalance < generatedBlend.xec || usdValue < XEC_CONFIG.requiredUsdThreshold) {
+          setGenerationError(`Insufficient XEC balance. Need ${generatedBlend.xec} XEC (≈$${XEC_CONFIG.requiredUsdThreshold} USD). You have ${xecBalance.toFixed(2)} XEC (≈$${usdValue.toFixed(2)}).`);
+          setIsUnlocking(false);
+          return;
         }
+
+        // ✅ STEP 5: Request FULL blend with XRPL address header
+        const detectedCondition = detectCondition(userInput);
+        const useAI = userInput.length > 50 && !detectedCondition;
         
-        authHeaders['x-xrpl-address'] = xrplAddress;
+        const blendResponse = await fetch('/api/generate-blend', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-xrpl-address': xrplAddress // ✅ Pass XRPL address for verification
+          },
+          body: JSON.stringify({
+            condition: detectedCondition,
+            scentPreference: null,
+            skinType: null,
+            userInput: userInput,
+            useAI: useAI
+          })
+        });
+
+        const data = await blendResponse.json();
+
+        if (!blendResponse.ok) {
+          throw new Error(data.error || `HTTP ${blendResponse.status}`);
+        }
+
+        // ✅ STEP 6: Show full blend
+        const blendData = data.blend;
+        
+        if (!blendData?.recipe || !Array.isArray(blendData.recipe)) {
+          throw new Error('Full blend recipe missing');
+        }
+
+        // ✅ Save XRPL address for future use
+        localStorage.setItem('xrplAddress', xrplAddress);
+
+        setGeneratedBlend({ ...blendData, preview: false });
+        setProduct({ ...blendData });
+        setShowUnlockButton(false);
+        setUnlockOptions(null);
+        
+        alert(`✨ ${blendData.name} unlocked! Your full recipe is ready.`);
         
       } else if (paymentMethod === 'paypal') {
-        // ✅ For PayPal, user completes checkout via PayPal button
-        // This is handled separately - show instructions
+        // ✅ For PayPal, redirect to checkout or show instructions
         alert('Please complete PayPal checkout using the PayPal button below. Your blend will unlock automatically after payment.');
+        
+        // ✅ Optional: Scroll to PayPal button
+        const paypalButton = document.getElementById('paypal-button-container');
+        if (paypalButton) {
+          paypalButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
         setIsUnlocking(false);
         return;
       }
 
-      // ✅ STEP 4: Request FULL blend with auth headers
-      const detectedCondition = detectCondition(userInput);
-      const useAI = userInput.length > 50 && !detectedCondition;
-      
-      const response = await fetch('/api/generate-blend', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...authHeaders
-          // ❌ Remove 'x-preview' header to request full data
-        },
-        body: JSON.stringify({
-          condition: detectedCondition,
-          scentPreference: null,
-          skinType: null,
-          userInput: userInput,
-          useAI: useAI
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP ${response.status}`);
-      }
-
-      // ✅ Show full blend
-      const blendData = data.blend;
-      
-      if (!blendData?.recipe || !Array.isArray(blendData.recipe)) {
-        throw new Error('Full blend recipe missing');
-      }
-
-      setGeneratedBlend({ ...blendData, preview: false });
-      setProduct({ ...blendData });
-      setShowUnlockButton(false);
-      setUnlockOptions(null);
-      
-      alert(`✨ ${blendData.name} unlocked! Your full recipe is ready.`);
-      
     } catch (error) {
       console.error('Unlock error:', error);
       setGenerationError(error.message || 'Failed to unlock blend. Please try again.');
