@@ -22,6 +22,11 @@ export default function BlendPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState(null);
   
+  // ✅✅✅ NEW: Unlock Flow State Variables
+  const [showUnlockButton, setShowUnlockButton] = useState(false);
+  const [unlockOptions, setUnlockOptions] = useState(null);
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  
   const xummRef = useRef(null);
   const xrplClientRef = useRef(null);
 
@@ -57,17 +62,14 @@ export default function BlendPage() {
     const lowerInput = input.toLowerCase();
     
     // ✅ Comprehensive keyword mappings with weighted scores
-    // Higher weight = stronger signal for that condition
     const conditionMap = {
       'menopause': {
         weight: 0,
         keywords: [
-          // Primary symptoms
           'menopause', 'menopausal', 'peri-menopause', 'perimenopause', 'post-menopause', 'postmenopause',
           'hot flash', 'hot flashes', 'hotflush', 'hot flushes', 'night sweat', 'night sweats',
           'hormone', 'hormones', 'hormonal', 'hormone imbalance', 'hormonal imbalance',
           'estrogen', 'progesterone', 'oestrogen', 'low estrogen', 'declining estrogen',
-          // Related symptoms
           'mood swing', 'mood swings', 'irritability', 'emotional roller', 'weepy', 'tearful',
           'vaginal dry', 'vaginal dryness', 'dryness down there', 'intimate dryness',
           'libido', 'low libido', 'sex drive', 'decreased desire',
@@ -83,17 +85,14 @@ export default function BlendPage() {
       'stress': {
         weight: 0,
         keywords: [
-          // Primary emotions
           'stress', 'stressed', 'stressful', 'overwhelm', 'overwhelmed', 'overwhelming',
           'anxiety', 'anxious', 'anxiousness', 'panic', 'panic attack', 'nervous', 'nervousness',
           'worry', 'worried', 'worrying', 'fear', 'afraid', 'scared', 'frightened',
           'tension', 'tense', 'tightness', 'on edge', 'edgy', 'restless', 'agitated',
-          // Physical symptoms
           'racing heart', 'heart pound', 'chest tight', 'short breath', 'breathless',
           'shaking', 'trembling', 'sweaty', 'clammy', 'cold sweat', 'hot flash',
           'muscle tight', 'tight shoulders', 'tight neck', 'jaw clench', 'teeth grind',
           'stomach knot', 'butterfly', 'nauseous', 'queasy', 'digestive issue',
-          // Mental symptoms
           'can\'t focus', 'can not focus', 'distracted', 'scattered', 'racing thought', 'racing thoughts',
           'overthinking', 'ruminate', 'rumination', 'can\'t shut off', 'mind racing',
           'exhausted', 'burnout', 'burnt out', 'drained', 'depleted', 'fatigued', 'tired',
@@ -107,18 +106,15 @@ export default function BlendPage() {
       'headache': {
         weight: 0,
         keywords: [
-          // Types of headaches
           'headache', 'head ache', 'head pain', 'head hurting', 'hurting head',
           'migraine', 'migraines', 'migraine attack', 'migraine headache', 'hemiplegic',
           'tension headache', 'tension head', 'stress headache', 'pressure headache',
           'cluster headache', 'sinus headache', 'sinus pressure', 'sinus pain',
           'hormone headache', 'menstrual migraine', 'period headache',
-          // Pain descriptions
           'throbbing', 'pounding', 'pulsing', 'pulsating', 'stabbing', 'shooting',
           'pressure', 'tight band', 'vice grip', 'squeezing', 'constricting',
           'behind eye', 'eye pain', 'one side', 'unilateral', 'left side', 'right side',
           'neck pain', 'stiff neck', 'shoulder pain', 'upper back pain',
-          // Associated symptoms
           'light sensitive', 'sensitive to light', 'photophobia', 'sound sensitive',
           'nausea', 'nauseous', 'vomiting', 'throw up', 'sick to stomach',
           'aura', 'visual disturbance', 'blurry vision', 'spots', 'flashes', 'zigzag',
@@ -131,19 +127,15 @@ export default function BlendPage() {
       'sciatic': {
         weight: 0,
         keywords: [
-          // Primary condition
           'sciatic', 'sciatica', 'sciatic nerve', 'sciatic pain', 'sciatic nerve pain',
           'piriformis', 'piriformis syndrome', 'deep gluteal',
-          // Pain location
           'lower back', 'low back', 'lumbar', 'buttock', 'butt pain', 'glute pain',
           'hip pain', 'leg pain', 'thigh pain', 'calf pain', 'foot pain',
           'shooting pain', 'radiating pain', 'traveling pain', 'down the leg',
           'one side', 'unilateral', 'left leg', 'right leg',
-          // Pain quality
           'burning', 'burning sensation', 'electric', 'electric shock', 'shooting',
           'tingling', 'pins and needles', 'numbness', 'numb', 'weakness', 'weak leg',
           'sharp pain', 'stabbing', 'intense pain', 'severe pain',
-          // Triggers & relief
           'sitting long', 'prolonged sitting', 'driving long', 'stand up', 'bend over',
           'lift heavy', 'lifting', 'twist', 'spinal', 'disc herniation', 'herniated disc',
           'bulging disc', 'slipped disc', 'spinal stenosis', 'bone spur',
@@ -154,12 +146,10 @@ export default function BlendPage() {
       'joint': {
         weight: 0,
         keywords: [
-          // Primary conditions
           'joint', 'joints', 'joint pain', 'joint pain relief', 'aching joints',
           'arthritis', 'osteoarthritis', 'rheumatoid arthritis', 'ra', 'oa',
           'gout', 'gouty', 'pseudogout', 'inflammatory arthritis',
           'bursitis', 'tendonitis', 'tendinitis', 'synovitis',
-          // Specific joints
           'knee', 'knees', 'knee pain', 'knee arthritis', 'knee swelling',
           'hip', 'hips', 'hip pain', 'hip arthritis', 'hip replacement',
           'shoulder', 'shoulders', 'shoulder pain', 'frozen shoulder', 'rotator cuff',
@@ -169,7 +159,6 @@ export default function BlendPage() {
           'ankle', 'ankles', 'ankle pain', 'foot pain', 'heel pain',
           'spine', 'back', 'vertebrae', 'facet joint', 'spinal joint',
           'jaw', 'tmj', 'temporomandibular', 'jaw pain', 'clicking jaw',
-          // Symptoms
           'stiff', 'stiffness', 'morning stiffness', 'stiff in morning', 'locked',
           'swelling', 'swollen', 'inflamed', 'inflammation', 'redness', 'warmth',
           'creaking', 'cracking', 'popping', 'grinding', 'bone on bone',
@@ -182,26 +171,21 @@ export default function BlendPage() {
       'insomnia': {
         weight: 0,
         keywords: [
-          // Primary sleep issues
           'insomnia', 'insomniac', 'sleepless', 'sleeplessness', 'can\'t sleep',
           'can not sleep', 'trouble sleeping', 'difficulty sleeping', 'poor sleep',
           'bad sleep', 'sleep problem', 'sleep issue', 'sleep disorder',
           'sleep deprivation', 'sleep deprived', 'lack of sleep', 'not enough sleep',
-          // Falling asleep
           'fall asleep', 'falling asleep', 'can\'t fall asleep', 'take forever',
           'toss and turn', 'restless', 'tossing', 'turning', 'wide awake',
           'mind racing', 'racing thoughts', 'can\'t shut off', 'overthinking',
           'anxiety bedtime', 'nervous at night', 'bedtime anxiety',
-          // Staying asleep
           'stay asleep', 'staying asleep', 'wake up', 'waking up', 'frequent waking',
           'middle of night', '3am', '4am', 'early morning', 'wake early',
           'can\'t fall back', 'can\'t get back', 'up for hours', 'lie awake',
-          // Sleep quality
           'light sleeper', 'light sleep', 'deep sleep', 'rem sleep', 'sleep cycle',
           'unrefreshing', 'not rested', 'groggy', 'grogginess', 'sleep hangover',
           'fatigue', 'tired', 'exhausted', 'daytime sleepiness', 'nap', 'napping',
           'energy crash', 'afternoon crash', 'coffee dependent', 'caffeine',
-          // Sleep environment & habits
           'noise sensitive', 'light sensitive', 'temperature', 'too hot', 'too cold',
           'partner snore', 'snoring', 'sleep apnea', 'breathing issue',
           'screen time', 'blue light', 'phone before bed', 'tv in bed',
@@ -212,19 +196,16 @@ export default function BlendPage() {
       'musclepain': {
         weight: 0,
         keywords: [
-          // Primary pain types
           'muscle', 'muscles', 'muscle pain', 'muscle ache', 'muscle aches',
           'sore muscle', 'sore muscles', 'muscle soreness', 'delayed onset', 'doms',
           'muscle spasm', 'spasm', 'cramp', 'cramps', 'charley horse', 'tight muscle',
           'muscle tight', 'muscle tension', 'knot', 'trigger point', 'myofascial',
-          // Locations
           'neck pain', 'stiff neck', 'upper back', 'mid back', 'lower back',
           'shoulder pain', 'shoulder blade', 'trap', 'trapezius', 'rhomboid',
           'chest pain', 'pec', 'pectoral', 'arm pain', 'bicep', 'tricep',
           'abdominal', 'abs', 'core', 'oblique', 'side pain', 'rib pain',
           'quad', 'quadriceps', 'hamstring', 'calf', 'shin', 'glute', 'glutes',
           'hip flexor', 'groin', 'inner thigh', 'outer thigh', 'it band',
-          // Causes
           'workout', 'exercise', 'gym', 'training', 'overuse', 'overworked',
           'strain', 'pulled muscle', 'torn muscle', 'injury', 'sports injury',
           'repetitive', 'repetition', 'same motion', 'typing', 'computer',
@@ -232,7 +213,6 @@ export default function BlendPage() {
           'heavy lift', 'lifting heavy', 'manual labor', 'physical work',
           'dehydration', 'electrolyte', 'magnesium', 'potassium', 'mineral',
           'stress tension', 'emotional tension', 'hold tension', 'carry stress',
-          // Relief
           'stretch', 'stretching', 'massage', 'foam roll', 'heat', 'ice',
           'rest', 'recovery', 'active recovery', 'physical therapy', 'chiropractic'
         ]
@@ -240,28 +220,23 @@ export default function BlendPage() {
       'digestion': {
         weight: 0,
         keywords: [
-          // Primary digestive issues
           'digest', 'digestion', 'digestive', 'digestive issue', 'digestive problem',
           'gut', 'gut health', 'gut issue', 'stomach', 'stomach issue', 'stomach problem',
           'gi', 'gastrointestinal', 'gi tract', 'bowel', 'bowel movement', 'bm',
           'bloat', 'bloating', 'bloated', 'distended', 'gas', 'gassy', 'flatulence',
           'burp', 'burping', 'belch', 'belching', 'heartburn', 'acid reflux', 'gerd',
-          // Bowel issues
           'constipation', 'constipated', 'irregular', 'infrequent', 'hard stool',
           'diarrhea', 'loose stool', 'frequent bm', 'urgent', 'incontinence',
           'ibs', 'irritable bowel', 'ibd', 'crohn\'s', 'colitis', 'ulcerative',
           'sibo', 'small intestine', 'bacterial overgrowth', 'candida', 'yeast',
-          // Stomach issues
           'nausea', 'nauseous', 'queasy', 'upset stomach', 'stomach ache',
           'vomiting', 'throw up', 'indigestion', 'dyspepsia', 'discomfort',
           'full', 'too full', 'early satiety', 'can\'t finish', 'heavy meal',
           'slow digestion', 'slow transit', 'food sit', 'sit like brick',
-          // Food related
           'food sensitivity', 'food intolerance', 'trigger food', 'react to food',
           'gluten', 'dairy', 'lactose', 'fructose', 'fodmap', 'histamine',
           'spicy food', 'fatty food', 'greasy', 'fried food', 'alcohol',
           'eat fast', 'eating fast', 'not chew', 'swallow air', 'carbonated',
-          // Associated symptoms
           'abdominal pain', 'belly pain', 'cramping', 'cramps', 'stomach cramp',
           'rumbling', 'gurgling', 'borborygmi', 'stomach noise',
           'weight loss', 'unintended weight', 'malabsorption', 'nutrient deficiency',
@@ -271,23 +246,19 @@ export default function BlendPage() {
       'shoulder': {
         weight: 0,
         keywords: [
-          // Primary location
           'shoulder', 'shoulders', 'shoulder pain', 'shoulder ache', 'aching shoulder',
           'left shoulder', 'right shoulder', 'both shoulders', 'shoulder blade',
           'scapula', 'scapular', 'upper back', 'between shoulder', 'shoulder blade pain',
-          // Specific conditions
           'frozen shoulder', 'adhesive capsulitis', 'rotator cuff', 'rotator cuff tear',
           'impingement', 'shoulder impingement', 'bursitis', 'tendonitis', 'tendinitis',
           'labral tear', 'slap tear', 'shoulder instability', 'dislocation', 'subluxation',
           'arthritis shoulder', 'bone spur', 'calcification', 'calcific tendonitis',
-          // Pain patterns
           'reach overhead', 'can\'t reach', 'limited reach', 'above head',
           'reach behind', 'back pocket', 'bra clasp', 'seatbelt', 'zipper',
           'reach across', 'opposite shoulder', 'cross body',
           'night pain', 'can\'t sleep shoulder', 'lie on shoulder', 'pressure pain',
           'stiff shoulder', 'shoulder stiffness', 'frozen', 'locked', 'can\'t move',
           'weakness', 'weak shoulder', 'drop thing', 'can\'t lift', 'lifting pain',
-          // Causes
           'overhead work', 'painting', 'throwing', 'pitching', 'swimming',
           'tennis', 'golf', 'volleyball', 'baseball', 'repetitive overhead',
           'desk job', 'computer', 'typing', 'mouse', 'poor posture', 'rounded shoulder',
@@ -299,17 +270,14 @@ export default function BlendPage() {
       'glucose': {
         weight: 0,
         keywords: [
-          // Primary conditions
           'glucose', 'blood sugar', 'sugar level', 'glucose level', 'glucose monitoring',
           'diabetes', 'diabetic', 'type 1', 'type 2', 'type 1 diabetes', 'type 2 diabetes',
           'prediabetes', 'pre-diabetes', 'borderline diabetic', 'insulin resistance',
           'metabolic syndrome', 'metabolic disorder', 'insulin', 'insulin dependent',
-          // Blood sugar patterns
           'high sugar', 'hyperglycemia', 'low sugar', 'hypoglycemia', 'blood sugar spike',
           'sugar crash', 'crash after eating', 'reactive hypoglycemia', 'roller coaster',
           'fasting glucose', 'postprandial', 'after meal', 'morning number', 'a1c', 'hba1c',
           'glucose monitor', 'cgm', 'continuous monitor', 'finger stick', 'test strip',
-          // Symptoms
           'thirsty', 'excessive thirst', 'polydipsia', 'frequent urination', 'polyuria',
           'hungry', 'excessive hunger', 'polyphagia', 'always hungry', 'craving sugar',
           'blurry vision', 'vision change', 'tunnel vision', 'floaters',
@@ -317,7 +285,6 @@ export default function BlendPage() {
           'slow healing', 'slow wound', 'cut healing', 'infection prone',
           'fatigue', 'tired', 'exhausted', 'energy crash', 'afternoon crash',
           'weight gain', 'weight loss', 'unexplained weight', 'belly fat', 'visceral fat',
-          // Management
           'carb count', 'carbohydrate', 'low carb', 'keto', 'ketogenic',
           'medication', 'metformin', 'insulin injection', 'glucose tab', 'glucagon',
           'diet control', 'exercise', 'walking after meal', 'lifestyle change',
@@ -328,32 +295,26 @@ export default function BlendPage() {
       'metabolism': {
         weight: 0,
         keywords: [
-          // Primary metabolism issues
           'metabolism', 'metabolic', 'slow metabolism', 'fast metabolism', 'metabolism boost',
           'metabolic rate', 'bmr', 'basal metabolic', 'calorie burn', 'burn calories',
           'thyroid', 'thyroid issue', 'hypothyroid', 'hyperthyroid', 'underactive thyroid',
           'overactive thyroid', 'thyroid hormone', 'tsh', 't3', 't4', 'hashimoto', 'graves',
-          // Weight related
           'weight gain', 'gain weight', 'can\'t lose', 'can\'t lose weight', 'weight loss',
           'lose weight', 'stubborn weight', 'plateau', 'weight plateau', 'hard to lose',
           'easy gain', 'gain easily', 'yo-yo', 'yo-yo diet', 'rebound weight',
           'belly fat', 'abdominal fat', 'visceral fat', 'middle weight', 'middle age spread',
           'body composition', 'muscle mass', 'lean mass', 'body fat percentage',
-          // Energy patterns
           'low energy', 'fatigue', 'tired', 'exhausted', 'drained', 'depleted',
           'energy crash', 'afternoon slump', '3pm crash', 'need nap', 'always tired',
           'cold', 'cold hands', 'cold feet', 'temperature sensitive', 'can\'t get warm',
           'hot', 'overheated', 'heat intolerant', 'sweat excessive', 'night sweat',
-          // Digestive metabolism
           'slow digestion', 'constipation', 'irregular bowel', 'bloating after eating',
           'food sit', 'heavy after meal', 'slow transit', 'motility issue',
           'appetite change', 'increased appetite', 'decreased appetite', 'craving',
-          // Hormonal metabolism
           'cortisol', 'stress hormone', 'adrenal', 'adrenal fatigue', 'hpa axis',
           'leptin', 'ghrelin', 'hunger hormone', 'satiety', 'fullness signal',
           'pcos', 'polycystic ovary', 'ovarian cyst', 'hormone imbalance', 'insulin resistance',
           'menopause metabolism', 'age related', 'slowing down', 'getting older',
-          // Lifestyle factors
           'sedentary', 'inactive', 'desk job', 'sit all day', 'little exercise',
           'muscle loss', 'sarcopenia', 'aging muscle', 'strength training', 'build muscle',
           'diet', 'calorie restriction', 'intermittent fasting', 'eating window',
@@ -363,14 +324,11 @@ export default function BlendPage() {
       'lupus': {
         weight: 0,
         keywords: [
-          // Primary condition
           'lupus', 'sle', 'systemic lupus', 'lupus erythematosus', 'autoimmune lupus',
           'lupus flare', 'flare up', 'flare-up', 'lupus symptoms', 'living with lupus',
-          // Autoimmune general
           'autoimmune', 'autoimmune disease', 'autoimmune disorder', 'immune system',
           'overactive immune', 'immune attack', 'self attack', 'chronic autoimmune',
           'inflammatory', 'inflammation', 'systemic inflammation', 'chronic inflammation',
-          // Lupus-specific symptoms
           'butterfly rash', 'malar rash', 'face rash', 'sun sensitivity', 'photosensitive',
           'sun exposure', 'sun reaction', 'uv sensitive', 'rash after sun',
           'joint pain', 'joint swelling', 'arthritis lupus', 'morning stiffness',
@@ -384,7 +342,6 @@ export default function BlendPage() {
           'brain fog', 'cognitive', 'memory issue', 'concentration', 'lupus fog',
           'headache', 'migraine', 'seizure', 'neurological', 'nervous system',
           'anemia', 'low blood count', 'white blood cell', 'platelet', 'blood disorder',
-          // Treatment & management
           'hydroxychloroquine', 'plaquenil', 'prednisone', 'steroid', 'immunosuppressant',
           'biologic', 'benlysta', 'cellcept', 'methotrexate', 'medication',
           'rheumatologist', 'autoimmune specialist', 'regular monitoring', 'blood work',
@@ -396,13 +353,11 @@ export default function BlendPage() {
       'opioid': {
         weight: 0,
         keywords: [
-          // Primary recovery terms
           'opioid', 'opioids', 'opiate', 'opiates', 'narcotic', 'narcotics',
           'recovery', 'recovering', 'recovery journey', 'in recovery', 'sobriety',
           'sober', 'getting sober', 'stay sober', 'relapse', 'relapse prevention',
           'addiction', 'addicted', 'addiction recovery', 'substance abuse', 'substance use',
           'dependence', 'dependent', 'physical dependence', 'chemical dependence',
-          // Withdrawal symptoms
           'withdrawal', 'withdraw', 'detox', 'detoxing', 'withdrawal symptom',
           'cold turkey', 'coming off', 'tapering', 'taper off', 'wean off',
           'muscle ache', 'bone pain', 'deep pain', 'restless leg', 'rls', 'leg jitter',
@@ -412,12 +367,10 @@ export default function BlendPage() {
           'insomnia', 'can\'t sleep', 'restless', 'toss and turn', 'yawning',
           'runny nose', 'watery eye', 'dilated pupil', 'sensitive to light',
           'craving', 'urge', 'trigger', 'drug seeking', 'obsession',
-          // Pain management alternatives
           'pain management', 'chronic pain', 'pain relief', 'alternative pain',
           'non opioid', 'opioid free', 'natural pain', 'holistic pain',
           'nerve pain', 'neuropathy', 'back pain', 'surgery recovery', 'injury pain',
           'physical therapy', 'massage', 'acupuncture', 'meditation', 'mindfulness',
-          // Support & treatment
           'mat', 'medication assisted', 'suboxone', 'methadone', 'vivitrol', 'naloxone',
           'narcan', 'overdose prevention', 'harm reduction', 'needle exchange',
           'counseling', 'therapy', 'support group', 'na', 'narcotics anonymous',
@@ -430,30 +383,25 @@ export default function BlendPage() {
       'blood-type-a': {
         weight: 0,
         keywords: [
-          // Blood type specific
           'blood type', 'bloodtype', 'type a', 'type a positive', 'type a negative',
           'a positive', 'a negative', 'blood type diet', 'eat right 4 your type',
           'dadamo', 'peter dadamo', 'blood type nutrition', 'genotype diet',
-          // Type A characteristics
           'sensitive', 'sensitive digestion', 'sensitive stomach', 'delicate digestion',
           'vegetarian', 'plant based', 'plant diet', 'meat sensitive', 'red meat issue',
           'low stomach acid', 'hypochlorhydria', 'digestive enzyme', 'enzyme deficient',
           'stress sensitive', 'high cortisol', 'adrenal issue', 'calming needed',
           'type a personality', 'perfectionist', 'type a trait', 'driven', 'ambitious',
-          // Health tendencies
           'heart disease', 'cardiovascular', 'heart health', 'cholesterol', 'high cholesterol',
           'cancer prevention', 'cancer risk', 'immune support', 'low immune', 'infection prone',
           'diabetes risk', 'insulin resistance', 'metabolic issue', 'weight gain',
           'thyroid', 'slow thyroid', 'thyroid support', 'metabolism slow',
           'bone health', 'osteoporosis', 'bone density', 'calcium',
-          // Dietary needs
           'avoid meat', 'limit meat', 'no red meat', 'fish okay', 'poultry okay',
           'dairy sensitive', 'limit dairy', 'no dairy', 'lactose issue',
           'wheat issue', 'gluten sensitive', 'lectin', 'lectin sensitive',
           'alkaline', 'alkaline diet', 'acidic', 'balance ph', 'ph balance',
           'small meal', 'frequent meal', 'grazing', 'large meal hard', 'heavy meal',
           'calming food', 'soothing food', 'gentle food', 'easy digest',
-          // Lifestyle
           'calming exercise', 'yoga', 'tai chi', 'qigong', 'meditation', 'gentle movement',
           'intense exercise', 'overdo exercise', 'too much cardio', 'cortisol spike',
           'routine', 'structured', 'schedule', 'regular meal', 'regular sleep',
@@ -463,18 +411,15 @@ export default function BlendPage() {
       'telomere': {
         weight: 0,
         keywords: [
-          // Primary anti-aging terms
           'telomere', 'telomeres', 'telomere length', 'telomere shortening', 'telomerase',
           'anti-aging', 'anti aging', 'age reversal', 'reverse aging', 'slow aging',
           'longevity', 'long life', 'life extension', 'healthy aging', 'graceful aging',
           'cellular aging', 'cell aging', 'biological age', 'chronological age',
-          // Cellular health
           'cell', 'cells', 'cellular health', 'cell repair', 'cell regeneration',
           'dna', 'dna damage', 'dna repair', 'genetic', 'genome', 'epigenetic',
           'mitochondria', 'mitochondrial', 'energy production', 'cellular energy',
           'oxidative stress', 'free radical', 'antioxidant', 'ros', 'reactive oxygen',
           'inflammation', 'chronic inflammation', 'inflammatory', 'anti-inflammatory',
-          // Aging signs
           'wrinkle', 'wrinkles', 'fine line', 'aging skin', 'skin aging', 'elasticity',
           'sagging', 'loose skin', 'age spot', 'sun damage', 'photoaging',
           'gray hair', 'grey hair', 'hair loss', 'thinning hair', 'hair aging',
@@ -482,7 +427,6 @@ export default function BlendPage() {
           'memory', 'cognitive decline', 'brain fog', 'mental sharpness', 'focus',
           'muscle loss', 'sarcopenia', 'strength loss', 'frail', 'frailty',
           'bone loss', 'bone density', 'osteoporosis', 'joint stiffness',
-          // Lifestyle factors
           'stress management', 'chronic stress', 'cortisol', 'adrenal', 'hpa axis',
           'sleep quality', 'deep sleep', 'sleep duration', 'circadian', 'melatonin',
           'exercise', 'physical activity', 'strength training', 'cardio', 'movement',
@@ -496,7 +440,6 @@ export default function BlendPage() {
       'unbroken': {
         weight: 0,
         keywords: [
-          // Chronic illness terms
           'unbroken', 'unbroken spirit', 'chronic illness', 'chronic disease',
           'invisible illness', 'hidden illness', 'unseen illness', 'spoonie', 'spoon theory',
           'flare', 'flare up', 'flare-up', 'symptom flare', 'bad day', 'crash',
@@ -507,7 +450,6 @@ export default function BlendPage() {
           'pots', 'dysautonomia', 'autonomic', 'orthostatic', 'heart rate', 'blood pressure',
           'ehlers danlos', 'eds', 'hypermobile', 'joint hypermobility', 'connective tissue',
           'mast cell', 'mcast', 'histamine', 'mcas', 'allergic', 'sensitivity',
-          // Symptoms
           'pain', 'body pain', 'widespread pain', 'all over pain', 'aching', 'sore',
           'fatigue', 'exhaustion', 'extreme fatigue', 'crushing tired', 'wired tired',
           'brain fog', 'cognitive', 'memory', 'concentration', 'mental fog', 'confusion',
@@ -516,7 +458,6 @@ export default function BlendPage() {
           'overwhelm', 'overstimulated', 'sensory overload', 'too much', 'can\'t handle',
           'grief', 'loss', 'mourning', 'identity loss', 'old self', 'who i was',
           'isolation', 'alone', 'lonely', 'misunderstood', 'not believed', 'dismissed',
-          // Healing & resilience
           'resilience', 'resilient', 'strength', 'strong', 'fighter', 'warrior',
           'healing', 'heal', 'healing journey', 'recovery', 'get better', 'improve',
           'acceptance', 'radical acceptance', 'new normal', 'adapt', 'adjustment',
@@ -530,25 +471,21 @@ export default function BlendPage() {
       'queen': {
         weight: 0,
         keywords: [
-          // Self-love & empowerment
           'queen', 'queen energy', 'empress', 'goddess', 'divine feminine', 'feminine',
           'self-love', 'love myself', 'self worth', 'self value', 'self esteem',
           'confidence', 'confident', 'empowerment', 'empowered', 'powerful', 'power',
           'inner strength', 'inner beauty', 'inner goddess', 'radiate', 'glow',
           'worthy', 'deserving', 'enough', 'i am enough', 'self acceptance',
-          // Emotional healing
           'heal', 'healing', 'emotional healing', 'heart healing', 'past hurt',
           'trauma', 'heal trauma', 'wound', 'emotional wound', 'old pain',
           'forgive', 'forgiveness', 'let go', 'release', 'free', 'freedom',
           'boundary', 'boundaries', 'say no', 'protect energy', 'energy vampire',
           'self care', 'nurturing', 'nurture', 'tend', 'gentle', 'kind',
-          // Relationships
           'relationship', 'partnership', 'love', 'romantic', 'attraction', 'magnetic',
           'communication', 'express', 'voice', 'speak truth', 'authentic', 'real',
           'mother', 'motherhood', 'nurturing', 'caregiver', 'giving', 'receiving',
           'sister', 'sisterhood', 'community', 'tribe', 'circle', 'support',
           'abundance', 'prosperity', 'manifest', 'attract', 'deserve good',
-          // Spiritual & energetic
           'sacred', 'sacred feminine', 'divine', 'spiritual', 'soul', 'spirit',
           'energy', 'vibration', 'frequency', 'align', 'alignment', 'flow',
           'intuition', 'intuitive', 'inner wisdom', 'inner voice', 'trust',
@@ -560,27 +497,23 @@ export default function BlendPage() {
       'king': {
         weight: 0,
         keywords: [
-          // Masculine energy & leadership
           'king', 'king energy', 'emperor', 'divine masculine', 'masculine',
           'leader', 'leadership', 'lead', 'command', 'authority', 'power',
           'strength', 'strong', 'inner strength', 'core strength', 'solid', 'grounded',
           'confidence', 'confident', 'self-assured', 'certain', 'decisive', 'decide',
           'purpose', 'mission', 'vision', 'direction', 'path', 'calling', 'destiny',
           'legacy', 'impact', 'influence', 'make mark', 'contribution', 'significance',
-          // Emotional & mental
           'clarity', 'clear', 'mental clarity', 'focus', 'concentration', 'sharp',
           'discipline', 'disciplined', 'commitment', 'dedication', 'persistence',
           'courage', 'brave', 'fearless', 'bold', 'warrior', 'fighter',
           'honor', 'integrity', 'truth', 'honest', 'authentic', 'real', 'genuine',
           'wisdom', 'wise', 'knowledge', 'understanding', 'insight', 'discernment',
           'calm', 'composed', 'steady', 'stable', 'unshakeable', 'centered',
-          // Relationships & protection
           'protect', 'protection', 'protector', 'provide', 'provider', 'support',
           'father', 'fatherhood', 'paternal', 'guide', 'mentor', 'teach',
           'partner', 'partnership', 'brother', 'brotherhood', 'ally', 'team',
           'respect', 'respected', 'earn respect', 'command respect', 'dignity',
           'abundance', 'prosperity', 'success', 'achievement', 'accomplishment',
-          // Spiritual & energetic
           'crown', 'crown chakra', 'third eye', 'solar plexus', 'root chakra',
           'energy', 'vitality', 'vigor', 'life force', 'chi', 'prana',
           'ground', 'grounding', 'earth', 'stable', 'rooted', 'foundation',
@@ -702,7 +635,7 @@ export default function BlendPage() {
     };
   }, [product, generatedBlend]);
 
-  // ✅ UPDATED: Generate Custom Blend with EXTENSIVE CONDITION DETECTION
+  // ✅✅✅ UPDATED: Generate Custom Blend with PREVIEW + UNLOCK Flow
   const handleGenerateBlend = async () => {
     if (!userInput.trim()) {
       setGenerationError('Please describe your wellness needs first.');
@@ -712,19 +645,20 @@ export default function BlendPage() {
     setIsGenerating(true);
     setGenerationError(null);
     setGeneratedBlend(null);
-    
+    setShowUnlockButton(false);
+    setUnlockOptions(null);
+
     try {
       const detectedCondition = detectCondition(userInput);
       const useAI = userInput.length > 50 && !detectedCondition;
-      
-      console.log('🎯 Generating blend...');
-      console.log('User input:', userInput);
-      console.log('Detected condition:', detectedCondition);
-      console.log('Will use AI:', useAI);
 
+      // ✅ STEP 1: Request PREVIEW first (no auth required)
       const response = await fetch('/api/generate-blend', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-preview': 'true' // ✅ Request preview mode
+        },
         body: JSON.stringify({
           condition: detectedCondition,
           scentPreference: null,
@@ -736,13 +670,44 @@ export default function BlendPage() {
 
       const data = await response.json();
 
-      console.log('📦 Response status:', response.status);
-      console.log('📦 Response data:', data);
+      // ✅ STEP 2: Handle preview response (402 Payment Required or 200 with preview)
+      if (response.status === 402 || data.preview) {
+        // Show preview UI
+        setGeneratedBlend({
+          name: data.preview?.name || data.blend?.name || 'Custom Blend',
+          description: data.preview?.description || data.blend?.description || 'Personalized blend for your wellness needs',
+          price: data.preview?.price || data.blend?.price || 58,
+          xec: data.preview?.xec || data.blend?.xec || 103,
+          slug: data.preview?.slug || data.blend?.slug || 'preview-blend',
+          preview: true, // ✅ Mark as preview
+          recipe: null,
+          instructions: null,
+          notes: null
+        });
+        
+        setUnlockOptions(data.unlockOptions || {
+          xec: {
+            required: data.preview?.xec || data.blend?.xec || 103,
+            usdThreshold: 25,
+            connectWallet: '/api/unlock-xec'
+          },
+          paypal: {
+            amount: data.preview?.price || data.blend?.price || 58,
+            currency: 'USD',
+            createOrder: '/api/submit-order'
+          }
+        });
+        
+        setShowUnlockButton(true);
+        setGenerationError(null);
+        return; // ✅ Stop here - user must unlock to see full recipe
+      }
 
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
+      // ✅ STEP 3: Handle full blend response (already authorized)
       const blendData = data.blend;
       
       if (!blendData?.name || !blendData?.recipe || !Array.isArray(blendData.recipe)) {
@@ -750,19 +715,161 @@ export default function BlendPage() {
         throw new Error('Blend response missing required fields');
       }
 
-      console.log('✅ Blend generation successful!');
-      setGeneratedBlend({ ...blendData });
+      setGeneratedBlend({ ...blendData, preview: false });
       setProduct({ ...blendData });
+      setShowUnlockButton(false);
       
     } catch (error) {
-      console.error('💥 Blend generation error:', error);
+      console.error('Blend generation error:', error);
       setGenerationError(error.message || 'Failed to generate blend. Please try again.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // ✅✅✅ XEC Wallet Verification - WITH IMPROVED ERROR HANDLING & DEBUG LOGGING
+  // ✅✅✅ NEW: Handle Unlock After Preview (with proper Xaman connection)
+  const handleUnlockBlend = async (paymentMethod) => {
+    if (!generatedBlend?.slug) {
+      setGenerationError('No blend to unlock. Please generate a blend first.');
+      return;
+    }
+    
+    setIsUnlocking(true);
+    setGenerationError(null);
+
+    try {
+      if (paymentMethod === 'xec') {
+        // ✅ STEP 1: Connect Xaman wallet (same as handleVerifyWallet)
+        if (!window.Xumm) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://xaman.app/assets/cdn/xumm.min.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.body.appendChild(script);
+          });
+        }
+
+        const XUMM_API_KEY = process.env.NEXT_PUBLIC_XUMM_API_KEY || 'your-api-key-here';
+        const xumm = new window.Xumm(XUMM_API_KEY);
+        xummRef.current = xumm;
+
+        await xumm.authorize();
+
+        // ✅ STEP 2: Get XRPL address from Xaman
+        const xrplAddress = await new Promise((resolve, reject) => {
+          const onReady = () => {
+            xumm.user.account.then(resolve).catch(reject);
+            xumm.off('success', onReady);
+          };
+          xumm.on('success', onReady);
+          setTimeout(() => {
+            xumm.off('success', onReady);
+            reject(new Error('Wallet connection timeout'));
+          }, 60000);
+        });
+
+        // ✅ STEP 3: Verify XEC balance meets threshold
+        const response = await xrplClientRef.current.request({
+          method: 'account_lines',
+          account: xrplAddress,
+          peer: XEC_CONFIG.issuer,
+        });
+
+        let xecBalance = 0;
+        const trustline = response.result.lines.find(
+          line => line.currency === XEC_CONFIG.currency && line.account === XEC_CONFIG.issuer
+        );
+        
+        if (trustline) {
+          xecBalance = parseFloat(trustline.balance);
+        }
+
+        let xecPriceUsd = 0.0004;
+        try {
+          const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
+          if (priceResponse.ok) {
+            const priceData = await priceResponse.json();
+            xecPriceUsd = priceData.ecash?.usd || priceData['ecash']?.usd || priceData.xec?.usd || 0.0004;
+          }
+        } catch (e) {
+          console.warn('Using fallback XEC price:', e);
+        }
+        
+        const usdValue = xecBalance * xecPriceUsd;
+
+        // ✅ STEP 4: Check if balance meets threshold
+        if (xecBalance < generatedBlend.xec || usdValue < XEC_CONFIG.requiredUsdThreshold) {
+          setGenerationError(`Insufficient XEC balance. Need ${generatedBlend.xec} XEC (≈$${XEC_CONFIG.requiredUsdThreshold} USD). You have ${xecBalance.toFixed(2)} XEC (≈$${usdValue.toFixed(2)}).`);
+          setIsUnlocking(false);
+          return;
+        }
+
+        // ✅ STEP 5: Request FULL blend with XRPL address header
+        const detectedCondition = detectCondition(userInput);
+        const useAI = userInput.length > 50 && !detectedCondition;
+        
+        const blendResponse = await fetch('/api/generate-blend', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'x-xrpl-address': xrplAddress // ✅ Pass XRPL address for verification
+          },
+          body: JSON.stringify({
+            condition: detectedCondition,
+            scentPreference: null,
+            skinType: null,
+            userInput: userInput,
+            useAI: useAI
+          })
+        });
+
+        const data = await blendResponse.json();
+
+        if (!blendResponse.ok) {
+          throw new Error(data.error || `HTTP ${blendResponse.status}`);
+        }
+
+        // ✅ STEP 6: Show full blend
+        const blendData = data.blend;
+        
+        if (!blendData?.recipe || !Array.isArray(blendData.recipe)) {
+          throw new Error('Full blend recipe missing');
+        }
+
+        // ✅ Save XRPL address for future use
+        localStorage.setItem('xrplAddress', xrplAddress);
+
+        setGeneratedBlend({ ...blendData, preview: false });
+        setProduct({ ...blendData });
+        setShowUnlockButton(false);
+        setUnlockOptions(null);
+        
+        alert(`✨ ${blendData.name} unlocked! Your full recipe is ready.`);
+        
+      } else if (paymentMethod === 'paypal') {
+        // ✅ For PayPal, redirect to checkout or show instructions
+        alert('Please complete PayPal checkout using the PayPal button below. Your blend will unlock automatically after payment.');
+        
+        // ✅ Optional: Scroll to PayPal button
+        const paypalButton = document.getElementById('paypal-button-container');
+        if (paypalButton) {
+          paypalButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        
+        setIsUnlocking(false);
+        return;
+      }
+
+    } catch (error) {
+      console.error('Unlock error:', error);
+      setGenerationError(error.message || 'Failed to unlock blend. Please try again.');
+    } finally {
+      setIsUnlocking(false);
+    }
+  };
+
+  // ✅ XEC Wallet Verification (for predefined blends)
   const handleVerifyWallet = async () => {
     const targetProduct = generatedBlend || product;
     if (!targetProduct || !xrplClientRef.current) {
@@ -773,26 +880,9 @@ export default function BlendPage() {
     setVerificationState('verifying');
 
     try {
-      // ✅ STEP 1: Validate XUMM_API_KEY
-      const XUMM_API_KEY = process.env.NEXT_PUBLIC_XUMM_API_KEY;
-      
-      console.log('🔍 Checking Xumm configuration...');
-      console.log('XUMM_API_KEY present?', !!XUMM_API_KEY);
-      console.log('XUMM_API_KEY length:', XUMM_API_KEY?.length);
-
-      if (!XUMM_API_KEY || XUMM_API_KEY === 'your-api-key-here' || XUMM_API_KEY.length < 10) {
-        console.error('❌ Invalid Xumm API Key Configuration!');
-        alert('❌ Configuration Error:\n\nYour Xumm Wallet API key is not properly configured.\n\nPlease verify that NEXT_PUBLIC_XUMM_API_KEY is set correctly in your Vercel environment variables.\n\nSee: https://dev.xumm.app/');
-        setVerificationState('idle');
-        return;
-      }
-
-      // ✅ STEP 2: Load Xamm SDK dynamically
-      console.log('🚀 Loading Xamm SDK...');
       if (!window.Xumm) {
         await new Promise((resolve, reject) => {
           const script = document.createElement('script');
-          // ✅ Use production CDN URL
           script.src = 'https://xaman.app/assets/cdn/xumm.min.js';
           script.onload = resolve;
           script.onerror = reject;
@@ -800,17 +890,12 @@ export default function BlendPage() {
         });
       }
 
-      // ✅ STEP 3: Initialize Xumm Wallet
-      console.log('📱 Initializing Xumm Wallet...');
+      const XUMM_API_KEY = process.env.NEXT_PUBLIC_XUMM_API_KEY || 'your-api-key-here';
       const xumm = new window.Xumm(XUMM_API_KEY);
       xummRef.current = xumm;
 
-      // ✅ STEP 4: Authorize Connection
-      console.log('🔐 Requesting authorization...');
       await xumm.authorize();
 
-      // ✅ STEP 5: Get Account Address
-      console.log('🆔 Getting account address...');
       const accountAddress = await new Promise((resolve, reject) => {
         const onReady = () => {
           xumm.user.account.then(resolve).catch(reject);
@@ -823,10 +908,6 @@ export default function BlendPage() {
         }, 60000);
       });
 
-      console.log('✅ Account address:', accountAddress);
-
-      // ✅ STEP 6: Verify XEC Balance via XRPL
-      console.log('⚖️  Checking XEC balance...');
       const response = await xrplClientRef.current.request({
         method: 'account_lines',
         account: accountAddress,
@@ -842,8 +923,6 @@ export default function BlendPage() {
         xecBalance = parseFloat(trustline.balance);
       }
 
-      // ✅ STEP 7: Get Current XEC Price
-      console.log('💲 Fetching XEC price...');
       let xecPriceUsd = 0.0004;
       try {
         const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
@@ -855,22 +934,15 @@ export default function BlendPage() {
             || 0.0004;
         }
       } catch (e) {
-        console.warn('⚠️  Using fallback XEC price:', e);
+        console.warn('Using fallback XEC price:', e);
       }
       
       const usdValue = xecBalance * xecPriceUsd;
 
-      console.log('📊 XEC Balance:', xecBalance);
-      console.log('📊 USD Value:', usdValue);
-      console.log('📊 Required XEC:', targetProduct.xec);
-      console.log('📊 Required USD:', XEC_CONFIG.requiredUsdThreshold);
-
       setXecBalance(xecBalance);
       setUsdValue(usdValue);
 
-      // ✅ STEP 8: Check Threshold
       if (xecBalance >= targetProduct.xec && usdValue >= XEC_CONFIG.requiredUsdThreshold) {
-        console.log('✅ Balance verified successfully!');
         setVerificationState('unlocked');
         
         await fetch('/api/verify-unlock', {
@@ -894,21 +966,18 @@ export default function BlendPage() {
         
         window.location.href = `/blend-delivery?blend=${targetProduct.slug}&verified=true&ai=${!!generatedBlend}&payment=xec`;
       } else {
-        console.log('❌ Insufficient balance');
         setVerificationState('insufficient');
         alert(`Insufficient XEC balance. Need ${targetProduct.xec} XEC (≈$${XEC_CONFIG.requiredUsdThreshold} USD). You have ${xecBalance.toFixed(2)} XEC (≈$${usdValue.toFixed(2)}).`);
       }
 
     } catch (error) {
-      console.error('❌ Verification error:', error);
+      console.error('Verification error:', error);
       setVerificationState('idle');
       
       if (error.message?.includes('timeout')) {
-        alert('Wallet connection timed out. Please allow popups and try again.');
+        alert('Wallet connection timed out. Please try again.');
       } else if (error.message?.includes('popup') || error.message?.includes('blocked')) {
         alert('Please allow popups for emocreations.skin to connect your wallet.');
-      } else if (error.message?.includes('invalid client') || error.message?.includes('redirect')) {
-        alert('❌ Xumm Wallet Configuration Error:\n\nYour Xumm Wallet API credentials are invalid or misconfigured.\n\nPlease verify:\n1. NEXT_PUBLIC_XUMM_API_KEY is set in Vercel\n2. Domain is registered at https://dev.xumm.app/\n3. API key has correct redirect URLs:\n   - https://www.emocreations.skin/blend\n   - http://localhost:3000/blend');
       } else {
         alert('Failed to verify wallet: ' + error.message);
       }
@@ -918,6 +987,8 @@ export default function BlendPage() {
   const handleSelectPredefined = (slug) => {
     setGeneratedBlend(null);
     setUserInput('');
+    setShowUnlockButton(false);
+    setUnlockOptions(null);
     setProduct(PREDEFINED_BLENDS[slug]);
     setVerificationState('idle');
   };
@@ -950,11 +1021,11 @@ export default function BlendPage() {
         </div>
         <div className="relative z-10 text-center px-4">
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
-            {generatedBlend ? '✨ Your AI-Curated Blend' : targetProduct.name}
+            {generatedBlend ? (generatedBlend.preview ? '🔒 Preview: ' : '✨ ') + (generatedBlend.name || targetProduct.name) : targetProduct.name}
           </h1>
           <p className="text-lg text-gray-300">
             {generatedBlend 
-              ? 'Personalized for your wellness journey. Powered by AI + $XEC.' 
+              ? (generatedBlend.preview ? 'Unlock with XEC or PayPal to see full recipe' : 'Personalized for your wellness journey. Powered by AI + $XEC.') 
               : 'Unlock this AI-curated blend. Powered by $XEC.'}
           </p>
         </div>
@@ -1002,38 +1073,122 @@ export default function BlendPage() {
         </section>
       )}
 
-      {/* Blend Recipe Display */}
+      {/* ✅✅✅ Blend Recipe Display with PREVIEW + UNLOCK UI */}
       {(generatedBlend || !generatedBlend) && (
         <div className="py-12 px-6 max-w-4xl mx-auto">
           <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
             <h2 className="text-2xl font-bold mb-4">
-              {generatedBlend ? 'Your Personalized Recipe' : 'Blend Includes:'}
+              {generatedBlend ? (generatedBlend.preview ? '🔒 Preview: ' : 'Your Personalized Recipe: ') : 'Blend Includes:'}
+              {generatedBlend?.name || targetProduct.name}
             </h2>
             
             {generatedBlend ? (
               <>
                 <p className="text-gray-300 mb-4 italic">{generatedBlend.description}</p>
-                <ul className="text-gray-300 space-y-3 mb-6">
-                  {generatedBlend.recipe.map((item, idx) => (
-                    <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
-                      <span>• {item.oil} — {item.purpose}</span>
-                      <span className="text-turquoise font-medium">{item.drops} drops</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="bg-black p-4 rounded-lg mb-4">
-                  <p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p>
+                
+                {/* ✅ Show price/XEC requirement */}
+                <div className="bg-black/50 p-4 rounded-lg mb-4 border border-turquoise/30">
+                  <p className="text-sm text-gray-300">
+                    <span className="font-semibold text-turquoise">Price:</span> ${generatedBlend.price} USD 
+                    <span className="mx-2">•</span>
+                    <span className="font-semibold text-turquoise">Or:</span> {generatedBlend.xec} XEC
+                  </p>
                 </div>
-                <button
-                  onClick={() => {
-                    setGeneratedBlend(null);
-                    setUserInput('');
-                    setProduct(PREDEFINED_BLENDS['xe']);
-                  }}
-                  className="text-sm text-gray-400 hover:text-turquoise underline"
-                >
-                  ← Try a predefined blend instead
-                </button>
+                
+                {/* ✅ Show full recipe only if not preview */}
+                {!generatedBlend.preview ? (
+                  <>
+                    <h3 className="text-lg font-semibold mb-4">Your Personalized Recipe:</h3>
+                    <ul className="text-gray-300 space-y-3 mb-6">
+                      {generatedBlend.recipe.map((item, idx) => (
+                        <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
+                          <span>• {item.oil} — {item.purpose}</span>
+                          <span className="text-turquoise font-medium">{item.drops} drops</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="bg-black p-4 rounded-lg mb-4">
+                      <p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p>
+                    </div>
+                    {generatedBlend.notes && (
+                      <div className="bg-yellow-900/20 border border-yellow-700/50 p-4 rounded-lg mb-4">
+                        <p className="text-xs text-yellow-200">{generatedBlend.notes}</p>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setGeneratedBlend(null);
+                        setUserInput('');
+                        setShowUnlockButton(false);
+                        setUnlockOptions(null);
+                        setProduct(PREDEFINED_BLENDS['xe']);
+                      }}
+                      className="text-sm text-gray-400 hover:text-turquoise underline"
+                    >
+                      ← Try a different blend
+                    </button>
+                  </>
+                ) : (
+                  // ✅ Preview mode: Show teaser + unlock buttons
+                  <div className="text-center py-6">
+                    <div className="bg-gray-800/50 p-6 rounded-xl mb-6 border border-gray-700">
+                      <p className="text-gray-400 mb-2 text-lg">🔒 Full Recipe Locked</p>
+                      <p className="text-gray-500 text-sm mb-4">
+                        Complete recipe, instructions, and usage guide are unlocked with payment.
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
+                        <span>✨ {generatedBlend.xec} XEC</span>
+                        <span>•</span>
+                        <span>💳 ${generatedBlend.price} USD</span>
+                      </div>
+                    </div>
+                    
+                    {showUnlockButton && unlockOptions && (
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        {/* XEC Unlock Button */}
+                        <button
+                          onClick={() => handleUnlockBlend('xec')}
+                          disabled={isUnlocking}
+                          className="bg-turquoise hover:bg-teal-400 disabled:opacity-50 text-black py-3 px-6 rounded font-medium transition flex items-center justify-center gap-2"
+                        >
+                          {isUnlocking ? (
+                            <>
+                              <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                              Connecting...
+                            </>
+                          ) : (
+                            '🪙 Unlock with XEC'
+                          )}
+                        </button>
+                        
+                        {/* PayPal Unlock Button */}
+                        <button
+                          onClick={() => handleUnlockBlend('paypal')}
+                          disabled={isUnlocking}
+                          className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-3 px-6 rounded font-medium transition flex items-center justify-center gap-2"
+                        >
+                          {isUnlocking ? (
+                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            '💳 Pay with PayPal'
+                          )}
+                        </button>
+                      </div>
+                    )}
+                    
+                    <button
+                      onClick={() => {
+                        setGeneratedBlend(null);
+                        setUserInput('');
+                        setShowUnlockButton(false);
+                        setUnlockOptions(null);
+                      }}
+                      className="text-sm text-gray-400 hover:text-turquoise underline mt-6"
+                    >
+                      ← Try a different blend
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <ul className="text-gray-300 space-y-2">
