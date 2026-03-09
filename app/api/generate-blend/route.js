@@ -20,6 +20,13 @@ const poeClient = process.env.POE_API_KEY
     })
   : null;
 
+// ✅ XEC Token Configuration
+const XEC_CONFIG = {
+  currency: 'XEC',
+  issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX',
+  requiredUsdThreshold: 25, // Minimum $25 USD worth of XEC
+};
+
 // ✅ Rate Limiter
 let ratelimit;
 const getRatelimit = () => {
@@ -38,8 +45,78 @@ const getRatelimit = () => {
   return ratelimit;
 };
 
+// ✅✅✅ HELPER: Verify user authorization (XEC balance or PayPal session)
+async function verifyUserAuthorization(request, blendData) {
+  const authHeader = request.headers.get('authorization');
+  const xrplAddress = request.headers.get('x-xrpl-address');
+  
+  // Get blend price for threshold check
+  const priceUsd = blendData.price || 38;
+  const requiredXec = Math.ceil(priceUsd / 0.37);
+  
+  // ✅ Option 1: Check XEC balance via XRPL
+  if (xrplAddress) {
+    try {
+      const client = new Client('wss://xrplcluster.com');
+      await client.connect();
+      
+      const response = await client.request({
+        method: 'account_lines',
+        account: xrplAddress,
+        peer: XEC_CONFIG.issuer,
+      });
+      
+      await client.disconnect();
+      
+      const trustline = response.result.lines.find(
+        line => line.currency === XEC_CONFIG.currency && line.account === XEC_CONFIG.issuer
+      );
+      
+      const xecBalance = trustline ? Math.abs(parseFloat(trustline.balance)) : 0;
+      const xecPriceUsd = 0.0004; // Conservative fallback
+      const usdValue = xecBalance * xecPriceUsd;
+      
+      // Check if balance meets threshold (≈$25 USD minimum)
+      if (xecBalance >= requiredXec && usdValue >= XEC_CONFIG.requiredUsdThreshold) {
+        return { 
+          authorized: true, 
+          method: 'xec-balance',
+          xecBalance,
+          usdValue
+        };
+      }
+    } catch (e) {
+      console.warn('XEC balance verification failed:', e);
+      // Continue to other auth methods
+    }
+  }
+  
+  // ✅ Option 2: Check for valid PayPal session token
+  if (authHeader?.startsWith('Bearer ')) {
+    const sessionToken = authHeader.replace('Bearer ', '');
+    
+    // TODO: Replace with your actual PayPal session verification
+    // For now, accept any non-empty token for testing:
+    if (sessionToken && sessionToken.length > 10) {
+      return { 
+        authorized: true, 
+        method: 'paypal-session',
+        sessionToken
+      };
+    }
+  }
+  
+  // ✅ Option 3: Allow preview mode (limited data)
+  if (request.headers.get('x-preview') === 'true') {
+    return { authorized: false, preview: true };
+  }
+  
+  return { authorized: false };
+}
+
 // ✅✅✅ ULTIMATE ESSENTIAL OIL LIBRARY - 150+ CONDITIONS
 const ESSENTIAL_OILS = {
+  // === PAIN & INFLAMMATION ===
   headache: [
     { name: "Peppermint", amount: "8 drops", purpose: "Cooling pain relief" },
     { name: "Lavender", amount: "10 drops", purpose: "Calms nervous system" },
@@ -1016,9 +1093,8 @@ const ESSENTIAL_OILS = {
 
 // ✅✅✅ EXTENSIVE ALIAS MAPPING WITH SYMPTOM-BASED KEYWORDS
 const CONDITION_ALIASES = {
-  // === PAIN ALIASES (Expanded with symptoms) ===
   'sciatica': [
-    'sciatic', 'sciatica', 'sciatic nerve', 'sciatic pain', 'piriformis',
+    'sciatic', 'sciatica', 'sciatic nerve', 'sciatic pain', 'piriformis', 
     'lower back leg', 'shooting leg', 'radiating leg', 'leg pain from back',
     'buttock to leg', 'nerve pain leg', 'down the leg pain', 'shooting down leg',
     'radiating pain leg', 'leg numbness', 'leg tingling', 'leg weakness',
@@ -1031,14 +1107,14 @@ const CONDITION_ALIASES = {
     'disc pain', 'herniated disc', 'bulging disc', 'slipped disc', 'degenerative disc'
   ],
   'headache': [
-    'head ache', 'head pain', 'migraine', 'tension head', 'sinus head',
-    'pressure head', 'throbbing head', 'pounding head', 'cluster head',
+    'head ache', 'head pain', 'migraine', 'tension head', 'sinus head', 
+    'pressure head', 'throbbing head', 'pounding head', 'cluster head', 
     'vascular head', 'forehead pain', 'temple pain', 'behind eye pain',
     'one sided head', 'left head', 'right head', 'band around head',
     'vice grip head', 'tight head', 'heavy head', 'foggy head'
   ],
   'hotflash': [
-    'hot flash', 'hot flashes', 'hotflush', 'hot flushes', 'night sweat',
+    'hot flash', 'hot flashes', 'hotflush', 'hot flushes', 'night sweat', 
     'night sweats', 'sudden heat', 'wave of heat', 'flushing', 'blushing',
     'feeling hot', 'overheating', 'temperature spike', 'sweating episodes',
     'menopausal heat', 'hormonal heat', 'internal heat', 'burning sensation'
@@ -1056,13 +1132,12 @@ const CONDITION_ALIASES = {
     'chronic stress', 'acute stress', 'anxiety stress', 'worry stress'
   ],
   'insomnia': [
-    'insomnia', 'insomniac', 'sleepless', 'sleeplessness', 'can\'t sleep',
+    'insomnia', 'insomniac', 'sleepless', 'sleeplessness', 'cant sleep', 
     'cannot sleep', 'trouble sleeping', 'difficulty sleeping', 'poor sleep',
     'bad sleep', 'wake up', 'wake early', 'middle night wake', '3am wake',
     '4am wake', 'tossing turning', 'cant fall asleep', 'cant stay asleep',
     'restless sleep', 'light sleep', 'interrupted sleep', 'non-restorative sleep'
   ],
-  // === SYMPTOM-ONLY ALIASES FOR INTELLIGENT MAPPING ===
   'pain_symptoms': [
     'aching', 'sore', 'tender', 'throbbing', 'stabbing', 'shooting', 'burning',
     'tingling', 'numb', 'weak', 'stiff', 'tight', 'cramping', 'spasming',
@@ -1161,12 +1236,10 @@ function detectCondition(input) {
   
   const lowerInput = input.toLowerCase();
   
-  // ✅ Step 1: Check direct condition matches
   if (ESSENTIAL_OILS[lowerInput]) {
     return lowerInput;
   }
   
-  // ✅ Step 2: Check condition aliases (including symptom keywords)
   for (const [condition, aliases] of Object.entries(CONDITION_ALIASES)) {
     if (condition.endsWith('_symptoms')) continue;
     for (const alias of aliases) {
@@ -1176,7 +1249,6 @@ function detectCondition(input) {
     }
   }
   
-  // ✅ Step 3: Check symptom-only aliases and map to most likely condition
   const symptomMatches = [];
   
   if (CONDITION_ALIASES.pain_symptoms?.some(sym => lowerInput.includes(sym))) {
@@ -1190,64 +1262,6 @@ function detectCondition(input) {
       symptomMatches.push('joint');
     } else {
       symptomMatches.push('musclepain');
-    }
-  }
-  
-  if (CONDITION_ALIASES.inflammation_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('joint')) {
-      symptomMatches.push('arthritis');
-    } else {
-      symptomMatches.push('inflammation');
-    }
-  }
-  
-  if (CONDITION_ALIASES.fatigue_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('thyroid') || lowerInput.includes('hormone')) {
-      symptomMatches.push('thyroid');
-    } else if (lowerInput.includes('adrenal') || lowerInput.includes('stress')) {
-      symptomMatches.push('adrenal');
-    } else {
-      symptomMatches.push('fatigue');
-    }
-  }
-  
-  if (CONDITION_ALIASES.digestive_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('ibs') || lowerInput.includes('irritable')) {
-      symptomMatches.push('ibs');
-    } else if (lowerInput.includes('reflux') || lowerInput.includes('heartburn')) {
-      symptomMatches.push('gerd');
-    } else {
-      symptomMatches.push('digestion');
-    }
-  }
-  
-  if (CONDITION_ALIASES.respiratory_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('asthma') || lowerInput.includes('wheeze')) {
-      symptomMatches.push('asthma');
-    } else if (lowerInput.includes('allergy') || lowerInput.includes('pollen')) {
-      symptomMatches.push('allergies');
-    } else {
-      symptomMatches.push('congestion');
-    }
-  }
-  
-  if (CONDITION_ALIASES.skin_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('acne') || lowerInput.includes('pimple')) {
-      symptomMatches.push('acne');
-    } else if (lowerInput.includes('eczema') || lowerInput.includes('atopic')) {
-      symptomMatches.push('eczema');
-    } else {
-      symptomMatches.push('dry_skin');
-    }
-  }
-  
-  if (CONDITION_ALIASES.emotional_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('panic') || lowerInput.includes('attack')) {
-      symptomMatches.push('panic');
-    } else if (lowerInput.includes('depress') || lowerInput.includes('sad')) {
-      symptomMatches.push('depression');
-    } else {
-      symptomMatches.push('stress');
     }
   }
   
@@ -1290,6 +1304,12 @@ function getBlendName(condition, userInput = null) {
     exhaustion: "Exhaustion Recovery",
     irritability: "Irritability Calm",
     frustration: "Frustration Release",
+    loneliness: "Loneliness Comfort",
+    sadness: "Sadness Lift Blend",
+    fear: "Fear Calm Blend",
+    worry: "Worry Release Blend",
+    shock: "Shock Recovery",
+    emotional: "Emotional Balance",
     insomnia: "Deep Sleep Serum",
     sleep: "Restful Sleep Blend",
     restless: "Restless Calm Blend",
@@ -1633,6 +1653,61 @@ export async function POST(request) {
       blendId = blendData.slug;
     }
 
+    // ✅✅✅ NEW: Authorization check BEFORE returning full blend
+    const authResult = await verifyUserAuthorization(request, blendData);
+    
+    // ✅ If not authorized and not preview mode, return payment required
+    if (!authResult.authorized && !authResult.preview) {
+      return NextResponse.json(
+        { 
+          error: 'Payment required',
+          message: `Hold ${blendData.xec} XEC (≈$${XEC_CONFIG.requiredUsdThreshold} USD) or complete PayPal payment to unlock full blend recipe`,
+          preview: {
+            name: blendData.name,
+            description: blendData.description,
+            price: blendData.price,
+            xec: blendData.xec,
+            slug: blendData.slug
+          },
+          unlockOptions: {
+            xec: {
+              required: blendData.xec,
+              usdThreshold: XEC_CONFIG.requiredUsdThreshold,
+              connectWallet: '/api/unlock-xec'
+            },
+            paypal: {
+              amount: blendData.price,
+              currency: 'USD',
+              createOrder: '/api/submit-order'
+            }
+          }
+        },
+        { status: 402 } // HTTP 402: Payment Required
+      );
+    }
+    
+    // ✅ If preview mode, return limited data
+    if (authResult.preview) {
+      return NextResponse.json({
+        success: true,
+        preview: true,
+        blend: {
+          name: blendData.name,
+          description: blendData.description,
+          price: blendData.price,
+          xec: blendData.xec,
+          slug: blendData.slug,
+          // ❌ Hide sensitive/valuable data in preview
+          recipe: null,
+          instructions: null,
+          notes: null,
+          baseOil: null
+        },
+        message: 'Preview mode: Unlock with XEC or PayPal to see full recipe'
+      });
+    }
+
+    // ✅ Authorized: Return full blend data
     // ✅ Log to Supabase
     if (supabase) {
       const { error: logError } = await supabase.from('access_logs').insert({
@@ -1647,7 +1722,8 @@ export async function POST(request) {
           blendId,
           oilCount: blendData.recipe?.length || 0,
           price: blendData.price,
-          xec: blendData.xec
+          xec: blendData.xec,
+          authMethod: authResult.method // Log how they unlocked
         },
         created_at: new Date().toISOString()
       });
@@ -1671,7 +1747,8 @@ export async function POST(request) {
       success: true, 
       blend: blendData,
       blendId,
-      method: generationMethod
+      method: generationMethod,
+      authMethod: authResult.method
     }, { status: 200, headers });
 
   } catch (error) {
