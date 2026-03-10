@@ -2,7 +2,11 @@
   "compilerOptions": {
     /* ✅ Project Setup */
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -12,26 +16,35 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve",
+    "jsx": "react-jsx",
     "incremental": true,
-
     /* ✅ Next.js App Router Support */
     "plugins": [
       {
         "name": "next"
       }
     ],
-
     /* ✅ Path Aliases (optional but recommended) */
     "paths": {
-      "@/*": ["./*"],
-      "@/app/*": ["./app/*"],
-      "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/utils/*": ["./utils/*"],
-      "@/types/*": ["./types/*"]
+      "@/*": [
+        "./*"
+      ],
+      "@/app/*": [
+        "./app/*"
+      ],
+      "@/components/*": [
+        "./components/*"
+      ],
+      "@/lib/*": [
+        "./lib/*"
+      ],
+      "@/utils/*": [
+        "./utils/*"
+      ],
+      "@/types/*": [
+        "./types/*"
+      ]
     },
-
     /* ✅ Strict Type Checking (catches errors early) */
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -49,17 +62,14 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": false,
-
     /* ✅ Module Resolution */
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-
     /* ✅ Source Maps for Debugging */
     "sourceMap": true,
     "inlineSources": true,
     "sourceRoot": "/"
   },
-
   /* ✅ Include/Exclude Patterns */
   "include": [
     "next-env.d.ts",
@@ -68,7 +78,8 @@
     "**/*.js",
     "**/*.jsx",
     ".next/types/**/*.ts",
-    "types/**/*.d.ts"
+    "types/**/*.d.ts",
+    ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
