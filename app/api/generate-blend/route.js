@@ -13,11 +13,11 @@ const supabase = createClient(
 );
 
 // ✅ Poe/OpenAI client
-const poeClient = process.env.POE_API_KEY 
+const poeClient = process.env.POE_API_KEY
   ? new OpenAI({
-      apiKey: process.env.POE_API_KEY,
-      baseURL: 'https://api.poe.com/v1',
-    })
+    apiKey: process.env.POE_API_KEY,
+    baseURL: 'https://api.poe.com/v1',
+  })
   : null;
 
 // ✅ Rate Limiter
@@ -42,7 +42,7 @@ const getRatelimit = () => {
 const XEC_CONFIG = {
   currency: 'XEC',
   issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX',
-  requiredUsdThreshold: 25, // Minimum $25 USD worth of XEC
+  requiredUsdThreshold: 25,
 };
 
 // ✅✅✅ HELPER: Verify user authorization (XEC balance or Preview mode)
@@ -77,7 +77,7 @@ async function verifyUserAuthorization(request, blendData) {
       );
       
       if (trustline) {
-        xecBalance = parseFloat(trustline.balance);
+        xecBalance = Math.abs(parseFloat(trustline.balance));
       }
       
       // Get current XEC price
@@ -1184,9 +1184,162 @@ const CONDITION_RELATIONSHIPS = {
   'thyroid + fatigue': 'thyroid',
   'autoimmune + inflammation': 'autoimmune',
   'adrenal + stress': 'adrenal',
+  'ptsd + anxiety': 'trauma',
+  'addiction + cravings': 'addiction',
+  'pregnancy + nausea': 'pregnancy',
+  'postpartum + depression': 'postpartum',
+  'cancer + pain': 'chronic_pain',
+  'chemo + nausea': 'nausea',
+  'surgery + pain': 'injury',
+  'stroke + paralysis': 'stroke',
+  'heart + anxiety': 'palpitations',
+  'lung + breathing': 'asthma',
+  'kidney + swelling': 'swelling',
+  'liver + detox': 'detox',
+  'gut + bloating': 'bloating',
+  'skin + itching': 'itching',
+  'joint + arthritis': 'arthritis',
   'back + sciatica': 'sciatica',
   'neck + headache': 'headache',
-  'joint + arthritis': 'arthritis',
+  'shoulder + frozen': 'shoulder',
+  'knee + arthritis': 'arthritis',
+  'foot + plantar': 'plantar',
+  'hand + carpal': 'carpal',
+  'eye + strain': 'headache',
+  'ear + infection': 'cold',
+  'nose + sinus': 'sinus',
+  'throat + sore': 'sore_throat',
+  'mouth + ulcer': 'stress',
+  'teeth + pain': 'headache',
+  'gum + inflammation': 'inflammation',
+  'hair + loss': 'thyroid',
+  'nail + brittle': 'thyroid',
+  'bone + density': 'thyroid',
+  'muscle + weakness': 'fatigue',
+  'nerve + damage': 'neuropathy',
+  'blood + sugar': 'glucose',
+  'cholesterol + high': 'metabolism',
+  'weight + gain': 'metabolism',
+  'weight + loss': 'metabolism',
+  'appetite + increase': 'cravings',
+  'appetite + decrease': 'nausea',
+  'sleep + apnea': 'apnea',
+  'snore + loud': 'snoring',
+  'dream + vivid': 'dreams',
+  'nightmare + frequent': 'nightmares',
+  'mood + swing': 'mood',
+  'anger + rage': 'anger',
+  'grief + loss': 'grief',
+  'trauma + abuse': 'trauma',
+  'fear + phobia': 'fear',
+  'worry + anxiety': 'anxiety',
+  'stress + burnout': 'burnout',
+  'fatigue + exhaustion': 'exhaustion',
+  'pain + chronic': 'chronic_pain',
+  'inflammation + systemic': 'inflammation',
+  'infection + viral': 'flu',
+  'infection + bacterial': 'cold',
+  'allergy + seasonal': 'allergies',
+  'allergy + food': 'digestion',
+  'skin + dry': 'dry_skin',
+  'skin + oily': 'oily_skin',
+  'skin + sensitive': 'sensitive_skin',
+  'wound + healing': 'wounds',
+  'scar + old': 'scars',
+  'burn + recent': 'burns',
+  'sun + damage': 'sunburn',
+  'cellulite + reduction': 'cellulite',
+  'vein + varicose': 'varicose_veins',
+  'circulation + poor': 'circulation',
+  'heart + palpitation': 'palpitations',
+  'blood + pressure': 'hypertension',
+  'thyroid + underactive': 'hypothyroid',
+  'thyroid + overactive': 'hyperthyroid',
+  'adrenal + exhausted': 'adrenal_fatigue',
+  'hormone + imbalance': 'menopause',
+  'fertility + issues': 'fertility',
+  'pregnancy + first': 'pregnancy',
+  'pregnancy + second': 'pregnancy',
+  'pregnancy + third': 'pregnancy',
+  'postpartum + healing': 'postpartum',
+  'breast + feeding': 'breastfeeding',
+  'milk + supply': 'lactation',
+  'mastitis + infection': 'mastitis',
+  'prostate + enlarged': 'prostate',
+  'libido + low': 'libido',
+  'performance + anxiety': 'impotence',
+  'addiction + alcohol': 'addiction',
+  'addiction + drug': 'addiction',
+  'addiction + opioid': 'opioid',
+  'withdrawal + acute': 'withdrawal',
+  'craving + sugar': 'cravings',
+  'craving + carb': 'cravings',
+  'detox + liver': 'detox',
+  'detox + kidney': 'detox',
+  'candida + oral': 'candida',
+  'candida + vaginal': 'candida',
+  'candida + systemic': 'candida',
+  'parasite + intestinal': 'parasites',
+  'lyme + chronic': 'lyme',
+  'epstein + active': 'epstein',
+  'shingles + active': 'shingles',
+  'dementia + early': 'dementia',
+  'dementia + moderate': 'dementia',
+  'dementia + severe': 'dementia',
+  'alzheimer + early': 'alzheimer',
+  'parkinson + early': 'parkinson',
+  'ms + relapsing': 'ms',
+  'ms + progressive': 'ms',
+  'als + early': 'als',
+  'seizure + frequent': 'seizure',
+  'epilepsy + controlled': 'epilepsy',
+  'epilepsy + uncontrolled': 'epilepsy',
+  'tremor + essential': 'tremor',
+  'tremor + parkinson': 'parkinson',
+  'stroke + recent': 'stroke',
+  'stroke + old': 'stroke',
+  'concussion + acute': 'concussion',
+  'concussion + chronic': 'concussion',
+  'adhd + child': 'adhd',
+  'adhd + adult': 'adhd',
+  'add + inattentive': 'add',
+  'focus + poor': 'focus',
+  'memory + poor': 'memory',
+  'brain + fog': 'brain_fog',
+  'concentration + poor': 'concentration',
+  'learning + disability': 'learning',
+  'autism + child': 'autism',
+  'autism + adult': 'autism',
+  'aspergers + mild': 'aspergers',
+  'sensory + overload': 'sensory',
+  'hypertension + mild': 'hypertension',
+  'hypertension + severe': 'hypertension',
+  'hypotension + orthostatic': 'hypotension',
+  'palpitation + occasional': 'palpitations',
+  'palpitation + frequent': 'palpitations',
+  'arrhythmia + benign': 'arrhythmia',
+  'arrhythmia + serious': 'arrhythmia',
+  'angina + stable': 'angina',
+  'angina + unstable': 'angina',
+  'chf + mild': 'chf',
+  'chf + severe': 'chf',
+  'circulation + cold': 'circulation',
+  'circulation + numb': 'circulation',
+  'varicose + mild': 'varicose_veins',
+  'varicose + severe': 'varicose_veins',
+  'blood + type': 'blood-type-a',
+  'telomere + length': 'telomere',
+  'unbroken + chronic': 'unbroken',
+  'queen + energy': 'queen',
+  'king + energy': 'king',
+  'meditation + daily': 'meditation',
+  'meditation + beginner': 'meditation',
+  'grounding + needed': 'grounding',
+  'energy + low': 'energy',
+  'energy + high': 'energy',
+  'chakra + balance': 'chakra',
+  'aura + cleanse': 'aura',
+  'protection + needed': 'protection',
   'xe + starter': 'xe'
 };
 
@@ -1220,10 +1373,9 @@ function calculatePricing(oils, isAi = false) {
   return { price, xec };
 }
 
-// ✅ Helper: Detect condition from extensive alias mapping
+// ✅ Helper: Detect condition from extensive alias mapping with symptom intelligence
 function detectCondition(input) {
   if (!input || input.trim().length < 3) return null;
-  
   const lowerInput = input.toLowerCase();
   
   // ✅ Step 1: Check direct condition matches
@@ -1247,11 +1399,11 @@ function detectCondition(input) {
   if (CONDITION_ALIASES.pain_symptoms?.some(sym => lowerInput.includes(sym))) {
     if (lowerInput.includes('back') || lowerInput.includes('spine') || lowerInput.includes('lumbar')) {
       symptomMatches.push('backpain');
-    } else if (lowerInput.includes('head') || lowerInput.includes('migraine')) {
+    } else if (lowerInput.includes('head') || lowerInput.includes('migraine') || lowerInput.includes('forehead') || lowerInput.includes('temple')) {
       symptomMatches.push('headache');
-    } else if (lowerInput.includes('leg') || lowerInput.includes('sciatic') || lowerInput.includes('shooting')) {
+    } else if (lowerInput.includes('leg') || lowerInput.includes('sciatic') || lowerInput.includes('shooting') || lowerInput.includes('radiating')) {
       symptomMatches.push('sciatica');
-    } else if (lowerInput.includes('joint') || lowerInput.includes('arthritis')) {
+    } else if (lowerInput.includes('joint') || lowerInput.includes('arthritis') || lowerInput.includes('knee') || lowerInput.includes('shoulder')) {
       symptomMatches.push('joint');
     } else {
       symptomMatches.push('musclepain');
@@ -1267,9 +1419,9 @@ function detectCondition(input) {
   }
   
   if (CONDITION_ALIASES.fatigue_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('thyroid') || lowerInput.includes('hormone')) {
+    if (lowerInput.includes('thyroid') || lowerInput.includes('hormone') || lowerInput.includes('metabolism')) {
       symptomMatches.push('thyroid');
-    } else if (lowerInput.includes('adrenal') || lowerInput.includes('stress')) {
+    } else if (lowerInput.includes('adrenal') || lowerInput.includes('stress') || lowerInput.includes('burnout')) {
       symptomMatches.push('adrenal');
     } else {
       symptomMatches.push('fatigue');
@@ -1277,9 +1429,9 @@ function detectCondition(input) {
   }
   
   if (CONDITION_ALIASES.digestive_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('ibs') || lowerInput.includes('irritable')) {
+    if (lowerInput.includes('ibs') || lowerInput.includes('irritable') || lowerInput.includes('spastic')) {
       symptomMatches.push('ibs');
-    } else if (lowerInput.includes('reflux') || lowerInput.includes('heartburn')) {
+    } else if (lowerInput.includes('reflux') || lowerInput.includes('heartburn') || lowerInput.includes('gerd')) {
       symptomMatches.push('gerd');
     } else {
       symptomMatches.push('digestion');
@@ -1287,9 +1439,9 @@ function detectCondition(input) {
   }
   
   if (CONDITION_ALIASES.respiratory_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('asthma') || lowerInput.includes('wheeze')) {
+    if (lowerInput.includes('asthma') || lowerInput.includes('wheeze') || lowerInput.includes('bronchial')) {
       symptomMatches.push('asthma');
-    } else if (lowerInput.includes('allergy') || lowerInput.includes('pollen')) {
+    } else if (lowerInput.includes('allergy') || lowerInput.includes('pollen') || lowerInput.includes('hay fever')) {
       symptomMatches.push('allergies');
     } else {
       symptomMatches.push('congestion');
@@ -1297,20 +1449,24 @@ function detectCondition(input) {
   }
   
   if (CONDITION_ALIASES.skin_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('acne') || lowerInput.includes('pimple')) {
+    if (lowerInput.includes('acne') || lowerInput.includes('pimple') || lowerInput.includes('breakout')) {
       symptomMatches.push('acne');
-    } else if (lowerInput.includes('eczema') || lowerInput.includes('atopic')) {
+    } else if (lowerInput.includes('eczema') || lowerInput.includes('atopic') || lowerInput.includes('dermatitis')) {
       symptomMatches.push('eczema');
+    } else if (lowerInput.includes('psoriasis') || lowerInput.includes('plaque') || lowerInput.includes('scaly')) {
+      symptomMatches.push('psoriasis');
     } else {
       symptomMatches.push('dry_skin');
     }
   }
   
   if (CONDITION_ALIASES.emotional_symptoms?.some(sym => lowerInput.includes(sym))) {
-    if (lowerInput.includes('panic') || lowerInput.includes('attack')) {
+    if (lowerInput.includes('panic') || lowerInput.includes('attack') || lowerInput.includes('hyperventilate')) {
       symptomMatches.push('panic');
-    } else if (lowerInput.includes('depress') || lowerInput.includes('sad')) {
+    } else if (lowerInput.includes('depress') || lowerInput.includes('sad') || lowerInput.includes('hopeless') || lowerInput.includes('worthless')) {
       symptomMatches.push('depression');
+    } else if (lowerInput.includes('trauma') || lowerInput.includes('abuse') || lowerInput.includes('ptsd') || lowerInput.includes('post traumatic')) {
+      symptomMatches.push('trauma');
     } else {
       symptomMatches.push('stress');
     }
@@ -1365,6 +1521,12 @@ function getBlendName(condition, userInput = null) {
     exhaustion: "Exhaustion Recovery",
     irritability: "Irritability Calm",
     frustration: "Frustration Release",
+    loneliness: "Loneliness Comfort",
+    sadness: "Sadness Lift Blend",
+    fear: "Fear Calm Blend",
+    worry: "Worry Release Blend",
+    shock: "Shock Recovery",
+    emotional: "Emotional Balance",
     insomnia: "Deep Sleep Serum",
     sleep: "Restful Sleep Blend",
     restless: "Restless Calm Blend",
@@ -1511,8 +1673,9 @@ function getBlendName(condition, userInput = null) {
     protection: "Spiritual Protection",
     xe: "XE – Everybody's Oil"
   };
-  return userInput 
-    ? `Custom AI Blend: ${userInput.slice(0, 20)}...` 
+  
+  return userInput
+    ? `Custom AI Blend: ${userInput.slice(0, 20)}...`
     : (names[condition] || "Custom Wellness Blend");
 }
 
@@ -1528,8 +1691,9 @@ function getBenefits(condition, userInput = null) {
     digestion: "Aids digestive comfort and reduces bloating through gentle warming action.",
     menopause: "Balances hormonal fluctuations and eases hot flashes with floral synergy.",
   };
-  return userInput 
-    ? "Personalized support crafted for your unique wellness journey." 
+  
+  return userInput
+    ? "Personalized support crafted for your unique wellness journey."
     : (benefits[condition] || "Personalized support for your unique wellness journey.");
 }
 
@@ -1541,14 +1705,12 @@ function getInstructions(condition) {
 // Notes (compliant)
 function getNotes(condition) {
   let note = "Perform a patch test before first use. This blend is intended as a complementary aromatherapy support and should not replace prescribed medical treatments.";
-  
   if (['headache', 'sciatica', 'migraine', 'nervepain', 'concussion', 'stroke'].includes(condition)) {
     note += " Avoid contact with eyes. If eye contact occurs, flush with a carrier oil, not water.";
   }
-  if (['digestion', 'menopause', 'lupus', 'glucose', 'opioid', 'pregnancy', 'diabetes', 'thyroid', 'autoimmune', 'cfs', 'longcovid', 'addiction'].includes(condition)) {
+  if (['digestion', 'menopause', 'lupus', 'glucose', 'opioid', 'pregnancy', 'diabetes', 'thyroid', 'autoimmune', 'cfs', 'longcovid', 'addiction', 'cancer', 'chemo', 'heart', 'lung', 'kidney', 'liver'].includes(condition)) {
     note += " Consult your healthcare provider before use, especially if pregnant, nursing, or taking medications.";
   }
-  
   return note;
 }
 
@@ -1557,45 +1719,44 @@ async function generateAiBlend(userInput) {
   if (!poeClient) {
     throw new Error('Poe API not configured. Please set POE_API_KEY environment variable.');
   }
-
+  
   const completion = await poeClient.chat.completions.create({
     model: 'emocreations.skin_ai',
     messages: [{
       role: 'user',
-      content: `Create a personalized essential oil blend recipe for: "${userInput}". 
-      Return ONLY a JSON object with this exact structure (no markdown, no extra text):
-      {
-        "name": "Creative blend name",
-        "description": "2-3 sentence description of benefits",
-        "recipe": [
-          {"oil": "Oil name", "drops": number, "purpose": "Why this oil"},
-          {"oil": "Oil name", "drops": number, "purpose": "Why this oil"}
-        ],
-        "instructions": "How to mix and apply",
-        "price": 58,
-        "xec": 103,
-        "slug": "ai-generated-" + Date.now()
-      }`
+      content: `Create a personalized essential oil blend recipe for: "${userInput}".
+Return ONLY a JSON object with this exact structure (no markdown, no extra text):
+{
+"name": "Creative blend name",
+"description": "2-3 sentence description of benefits",
+"recipe": [
+{"oil": "Oil name", "drops": number, "purpose": "Why this oil"},
+{"oil": "Oil name", "drops": number, "purpose": "Why this oil"}
+],
+"instructions": "How to mix and apply",
+"price": 58,
+"xec": 103,
+"slug": "ai-generated-" + Date.now()
+}`
     }],
     temperature: 0.7,
     max_tokens: 500,
   });
-
+  
   const responseText = completion.choices[0].message.content.trim();
   const cleanJson = responseText.replace(/```json\s*|\s*```/g, '').trim();
   const blendData = JSON.parse(cleanJson);
-
+  
   if (!blendData.name || !blendData.recipe || !Array.isArray(blendData.recipe)) {
     throw new Error('AI response missing required fields');
   }
-
+  
   return blendData;
 }
 
 export async function POST(request) {
   try {
     const body = await request.json();
-    
     const {
       condition,
       scentPreference,
@@ -1609,11 +1770,10 @@ export async function POST(request) {
     
     if (isAiRequest) {
       const limiter = getRatelimit();
-      
       if (limiter) {
-        const ip = request.headers.get('x-forwarded-for')?.split(',')[0] 
-                 || request.headers.get('x-real-ip') 
-                 || 'anonymous';
+        const ip = request.headers.get('x-forwarded-for')?.split(',')[0]
+          || request.headers.get('x-real-ip')
+          || 'anonymous';
         
         const { success, limit, reset, remaining } = await limiter.limit(ip);
         
@@ -1635,13 +1795,13 @@ export async function POST(request) {
           }
           
           return NextResponse.json(
-            { 
+            {
               error: 'Too many AI blend requests. Please wait ~30 seconds and try again.',
               retryAfter: Math.ceil((reset - Date.now()) / 1000),
               limit,
               remaining: 0
             },
-            { 
+            {
               status: 429,
               headers: {
                 'X-RateLimit-Limit': limit.toString(),
@@ -1685,8 +1845,8 @@ export async function POST(request) {
       
       let adjustedOils = oils;
       if (scentPreference === 'citrus') {
-        adjustedOils = oils.map(oil => 
-          oil.name.includes('Bergamot') || oil.name.includes('Lemon') ? oil : 
+        adjustedOils = oils.map(oil =>
+          oil.name.includes('Bergamot') || oil.name.includes('Lemon') ? oil :
           { ...oil, amount: (parseInt(oil.amount) * 0.8).toFixed(0) + ' drops' }
         );
       }
@@ -1708,14 +1868,14 @@ export async function POST(request) {
       blendId = blendData.slug;
     }
 
-    // ✅✅✅ NEW: Authorization check BEFORE returning full blend
+    // ✅ Authorization check BEFORE returning full blend
     const authResult = await verifyUserAuthorization(request, blendData);
-    
+
     // ✅ Case 1: Not authorized and NOT preview mode → Return 402 Payment Required
     if (!authResult.authorized && !authResult.previewMode) {
       console.log('❌ Unauthorized access attempt');
       return NextResponse.json(
-        { 
+        {
           error: 'Payment required',
           message: `Hold ${blendData.xec} XEC (≈$${XEC_CONFIG.requiredUsdThreshold} USD) or complete PayPal payment to unlock full blend recipe`,
           preview: {
@@ -1738,10 +1898,10 @@ export async function POST(request) {
             }
           }
         },
-        { status: 402 } // HTTP 402: Payment Required
+        { status: 402 }
       );
     }
-    
+
     // ✅ Case 2: Preview mode requested → Return limited data
     if (authResult.previewMode) {
       console.log('✅ Preview mode - returning limited data');
@@ -1754,7 +1914,6 @@ export async function POST(request) {
           price: blendData.price,
           xec: blendData.xec,
           slug: blendData.slug,
-          // ❌ Hide sensitive/valuable data in preview
           recipe: null,
           instructions: null,
           notes: null,
@@ -1766,7 +1925,7 @@ export async function POST(request) {
 
     // ✅ Case 3: Authorized with proper credentials → Return FULL recipe
     console.log('✅ Full blend unlocked - returning complete recipe');
-    
+
     // ✅ Log to Supabase
     if (supabase) {
       const { error: logError } = await supabase.from('access_logs').insert({
@@ -1782,7 +1941,7 @@ export async function POST(request) {
           oilCount: blendData.recipe?.length || 0,
           price: blendData.price,
           xec: blendData.xec,
-          authMethod: authResult.method || 'unknown' // Log how they unlocked
+          authMethod: authResult.method || 'unknown'
         },
         created_at: new Date().toISOString()
       });
@@ -1802,22 +1961,22 @@ export async function POST(request) {
       headers['X-RateLimit-Reset'] = Math.ceil(reset / 1000).toString();
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       blend: blendData,
       blendId,
       method: generationMethod,
       authMethod: authResult.method || 'unknown'
     }, { status: 200, headers });
-
+    
   } catch (error) {
     console.error('Generate blend error:', error);
     return NextResponse.json(
-      { 
-        error: 'Failed to generate blend', 
+      {
+        error: 'Failed to generate blend',
         details: error.message,
         suggestion: 'Try a simpler request or check your API configuration'
-      }, 
+      },
       { status: 500 }
     );
   }
@@ -1826,7 +1985,6 @@ export async function POST(request) {
 // ✅ Health check endpoint
 export async function GET() {
   const limiter = getRatelimit();
-  
   return NextResponse.json({
     status: 'ok',
     service: 'emocreations.skin - Blend Generator',

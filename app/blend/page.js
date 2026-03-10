@@ -1,10 +1,9 @@
 // app/blend/page.js
 'use client';
-// ✅ CRITICAL: Force dynamic rendering to avoid build-time errors
 export const dynamic = 'force-dynamic';
+
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-// ✅ Install with: npm install xrpl
 import { Client } from 'xrpl';
 
 export default function BlendPage() {
@@ -18,7 +17,6 @@ export default function BlendPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState(null);
   
-  // ✅ NEW: Unlock Flow State Variables
   const [showUnlockButton, setShowUnlockButton] = useState(false);
   const [unlockOptions, setUnlockOptions] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -26,14 +24,12 @@ export default function BlendPage() {
   const xummRef = useRef(null);
   const xrplClientRef = useRef(null);
 
-  // ✅ XEC Token Configuration
   const XEC_CONFIG = {
     currency: 'XEC',
     issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX',
     requiredUsdThreshold: 25,
   };
 
-  // ✅ Predefined Blends
   const PREDEFINED_BLENDS = {
     'unbroken': { name: 'The Unbroken Ointment', price: 88, xec: 156, slug: 'unbroken' },
     'xe': { name: 'XE – Everybody\'s Oil', price: 38, xec: 67, slug: 'xe' },
@@ -51,7 +47,6 @@ export default function BlendPage() {
     'metabolism': { name: 'Metabolism Boost Elixir', price: 58, xec: 103, slug: 'metabolism' }
   };
 
-  // ✅ Extensive Condition Keyword Mapping
   const detectCondition = (input) => {
     if (!input || input.trim().length < 3) return null;
     const lowerInput = input.toLowerCase();
@@ -246,9 +241,9 @@ export default function BlendPage() {
           'frozen shoulder', 'adhesive capsulitis', 'rotator cuff', 'rotator cuff tear',
           'impingement', 'shoulder impingement', 'bursitis', 'tendonitis', 'tendinitis',
           'labral tear', 'slap tear', 'shoulder instability', 'dislocation', 'subluxation',
-          'arthritis shoulder', 'bone spur', 'calcification', 'calcific tendonitis',
+          'arthritis shoulder', 'bone Spur', 'calcification', 'calcific tendonitis',
           'reach overhead', 'can\'t reach', 'limited reach', 'above head',
-          'reach behind', 'back pocket', 'bra clasp', 'seatbelt', 'zipper',
+          'reach behind', 'back pocket', 'bra clasp', 'seatbelt', 'zipper', 
           'reach across', 'opposite shoulder', 'cross body',
           'night pain', 'can\'t sleep shoulder', 'lie on shoulder', 'pressure pain',
           'stiff shoulder', 'shoulder stiffness', 'frozen', 'locked', 'can\'t move',
@@ -520,7 +515,7 @@ export default function BlendPage() {
 
     let bestMatch = null;
     let bestScore = 0;
-
+    
     for (const [condition, data] of Object.entries(conditionMap)) {
       let score = 0;
       
@@ -538,7 +533,7 @@ export default function BlendPage() {
         bestMatch = condition;
       }
     }
-
+    
     return bestScore >= 3 ? bestMatch : null;
   };
 
@@ -573,7 +568,7 @@ export default function BlendPage() {
     script.id = 'paypal-sdk';
     script.src = 'https://www.paypal.com/sdk/js?client-id=ATmYVsWxvBzV6cJgPrC_AvCmCi9WfjP3u4Mv8uyME_mvlw0zBKQ06-BNylvCY_IOMoBuQFyPvdLM1xZ6&currency=USD';
     script.async = true;
-    
+
     script.onload = () => {
       if (window.paypal) {
         window.paypal.Buttons({
@@ -627,7 +622,6 @@ export default function BlendPage() {
     };
   }, [product, generatedBlend]);
 
-  // ✅ FIXED: Handle Generate Blend with Preview + Unlock Flow
   const handleGenerateBlend = async () => {
     if (!userInput.trim()) {
       setGenerationError('Please describe your wellness needs first.');
@@ -643,13 +637,12 @@ export default function BlendPage() {
     try {
       const detectedCondition = detectCondition(userInput);
       const useAI = userInput.length > 50 && !detectedCondition;
-      
-      // ✅ STEP 1: Request PREVIEW first (send x-preview header)
+
       const response = await fetch('/api/generate-blend', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-preview': 'true' // ✅ Crucial header for preview mode
+          'x-preview': 'true'
         },
         body: JSON.stringify({
           condition: detectedCondition,
@@ -663,8 +656,7 @@ export default function BlendPage() {
       const data = await response.json();
       console.log('🧪 Preview Response:', data);
 
-      // ✅ STEP 2: Handle 402 Payment Required or Data with preview flag
-      // ✅ Allow 402 status as success in this case
+      // Handle 402 Payment Required OR data.preview flag
       if (response.status === 402 || data.preview) {
         setGeneratedBlend({
           name: data.preview?.name || data.blend?.name || 'Custom Blend',
@@ -672,7 +664,7 @@ export default function BlendPage() {
           price: data.preview?.price || data.blend?.price || 58,
           xec: data.preview?.xec || data.blend?.xec || 103,
           slug: data.preview?.slug || data.blend?.slug || 'preview-blend',
-          preview: true, // ✅ Mark as preview to hide recipe
+          preview: true,
           recipe: [],
           instructions: null
         });
@@ -692,21 +684,21 @@ export default function BlendPage() {
         
         setShowUnlockButton(true);
         setGenerationError(null);
-        setIsGenerating(false);
-        return; // ✅ Stop here - wait for unlock
+        return;
       }
 
-      // ✅ STEP 3: If successful and already authorized (rare on first load), show full blend
       if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`);
       }
 
       const blendData = data.blend;
+      
       if (!blendData?.name || !blendData?.recipe || !Array.isArray(blendData.recipe)) {
-        throw new Error('Invalid blend response');
+        console.error('❌ Invalid blend structure:', blendData);
+        throw new Error('Blend response missing required fields');
       }
 
-      setGeneratedBlend({ ...blendData, preview: false });
+      setGeneratedBlend({ ...blendData });
       setProduct({ ...blendData });
 
     } catch (error) {
@@ -717,7 +709,6 @@ export default function BlendPage() {
     }
   };
 
-  // ✅ FIXED: Handle Unlock After Preview (Modern Xumm Auth - No .off() calls)
   const handleUnlockBlend = async (paymentMethod) => {
     if (!generatedBlend?.slug) {
       setGenerationError('No blend to unlock. Please generate a blend first.');
@@ -729,7 +720,6 @@ export default function BlendPage() {
 
     try {
       if (paymentMethod === 'xec') {
-        // ✅ Load Xumm SDK dynamically
         if (!window.Xumm) {
           await new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -749,36 +739,43 @@ export default function BlendPage() {
         const xumm = new window.Xumm(XUMM_API_KEY);
         xummRef.current = xumm;
 
-        console.log('🔐 Requesting Xumm authorization...');
-        
-        // ✅ MODERN PROMISE AUTH (Removed .on/.off)
         let xrplAddress;
         try {
+          console.log('🔐 Requesting Xumm authorization...');
+          
           const result = await xumm.authorize();
           
           console.log('✅ Authorization result:', result);
           
           if (!result || !result.account || !result.account.address) {
-            throw new Error('Authorization failed or denied.');
+             if(result && result.transactionId) {
+                 throw new Error('Authorization completed but account data missing. Try again.');
+             } else {
+                 throw new Error('Authorization failed or denied.');
+             }
           }
           
           xrplAddress = result.account.address;
           
           if (!xrplAddress) {
-            throw new Error('Account address not found.');
+            throw new Error('Account address not found in authorization result.');
           }
           
           console.log('✅ XRPL Address:', xrplAddress.slice(0, 10) + '...');
           
         } catch (authError) {
           console.error('❌ Xumm auth error:', authError);
-          if (authError.message?.includes('timeout')) throw new Error('Connection timed out. Please allow popups.');
-          if (authError.message?.includes('popup')) throw new Error('Popup blocked. Allow pop-ups.');
+          if (authError.message?.includes('timeout')) {
+            throw new Error('Connection timed out. Please allow popups.');
+          } else if (authError.message?.includes('popup')) {
+            throw new Error('Popup blocked. Allow pop-ups for emocreations.skin.');
+          }
           throw authError;
         }
 
-        // ✅ Verify XEC balance via XRPL
-        if (!xrplClientRef.current) throw new Error('XRPL client not initialized');
+        if (!xrplClientRef.current) {
+          throw new Error('XRPL client not initialized');
+        }
         
         const response = await xrplClientRef.current.request({
           method: 'account_lines',
@@ -791,7 +788,9 @@ export default function BlendPage() {
           line => line.currency === XEC_CONFIG.currency && line.account === XEC_CONFIG.issuer
         );
         
-        if (trustline) xecBalance = parseFloat(trustline.balance);
+        if (trustline) {
+          xecBalance = parseFloat(trustline.balance);
+        }
 
         let xecPriceUsd = 0.0004;
         try {
@@ -800,15 +799,15 @@ export default function BlendPage() {
             const priceData = await priceResponse.json();
             xecPriceUsd = priceData.ecash?.usd || priceData.xec?.usd || 0.0004;
           }
-        } catch (e) { console.warn('Fallback XEC price:', e); }
+        } catch (e) {
+          console.warn('Using fallback XEC price:', e);
+        }
         
         const usdValue = xecBalance * xecPriceUsd;
 
-        // ✅ Check threshold
         if (xecBalance >= generatedBlend.xec && usdValue >= XEC_CONFIG.requiredUsdThreshold) {
           localStorage.setItem('xrplAddress', xrplAddress);
 
-          // Request FULL blend with address header
           const finalResponse = await fetch('/api/generate-blend', {
             method: 'POST',
             headers: { 
@@ -822,47 +821,58 @@ export default function BlendPage() {
             })
           });
 
-          if (!finalResponse.ok) throw new Error('Final verification failed');
-          
+          if (!finalResponse.ok) {
+            throw new Error('Final verification failed: ' + finalResponse.status);
+          }
+
           const finalData = await finalResponse.json();
           setGeneratedBlend({ ...finalData.blend, preview: false });
           setProduct({ ...finalData.blend });
           setShowUnlockButton(false);
-          setUnlockOptions(null);
           
           alert(`✨ ${finalData.blend.name} unlocked! Your full recipe is ready.`);
           
         } else {
+          setXecBalance(xecBalance);
+          setUsdValue(usdValue);
           throw new Error(`Insufficient balance: Need ${generatedBlend.xec} XEC, have ${xecBalance.toFixed(2)} XEC`);
         }
 
       } else if (paymentMethod === 'paypal') {
         alert('Please complete PayPal checkout below. Your blend will unlock automatically.');
         const buttonContainer = document.getElementById('paypal-button-container');
-        if (buttonContainer) buttonContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (buttonContainer) {
+          buttonContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         setIsUnlocking(false);
         return;
       }
+
     } catch (error) {
       console.error('❌ Unlock error:', error);
-      setGenerationError(error.message || 'Failed to unlock blend.');
+      setGenerationError(error.message || 'Failed to unlock blend. See console for details.');
       
-      if (error.message.includes('Configuration Error')) alert(error.message);
-      else if (error.message.includes('popup')) alert('Please allow popups for emocreations.skin.');
-      else if (error.message.includes('timed out')) alert('Connection timed out. Please try again.');
-      else alert(error.message);
+      if (error.message.includes('Configuration Error')) {
+          alert(error.message);
+      } else if (error.message.includes('popup')) {
+          alert('Please allow popups for emocreations.skin and try again.');
+      } else if (error.message.includes('timed out')) {
+          alert('Connection timed out. Please try again.');
+      } else {
+          alert(error.message);
+      }
     } finally {
       setIsUnlocking(false);
     }
   };
 
-  // ✅ XEC Wallet Verification (for predefined blends)
   const handleVerifyWallet = async () => {
     const targetProduct = generatedBlend || product;
     if (!targetProduct || !xrplClientRef.current) {
       alert('Blend not ready. Please generate or select a blend first.');
       return;
     }
+
     setVerificationState('verifying');
 
     try {
@@ -878,16 +888,20 @@ export default function BlendPage() {
 
       const XUMM_API_KEY = process.env.NEXT_PUBLIC_XUMM_API_KEY || 'your-api-key-here';
       
-      if (!XUMM_API_KEY || XUMM_API_KEY.length < 10) {
+      if (!XUMM_API_KEY || XUMM_API_KEY === 'your-api-key-here' || XUMM_API_KEY.length < 10) {
         throw new Error('❌ Configuration Error:\n\nYour Xumm Wallet API key is not configured.\n\nCheck Vercel → NEXT_PUBLIC_XUMM_API_KEY');
       }
       
       const xumm = new window.Xumm(XUMM_API_KEY);
       xummRef.current = xumm;
 
+      console.log('🔐 Requesting Xumm authorization...');
+      
       let accountAddress;
       try {
         const result = await xumm.authorize();
+        
+        console.log('✅ Authorization result:', result);
         
         if (!result || !result.account || !result.account.address) {
           throw new Error('Authorization failed or denied.');
@@ -895,9 +909,19 @@ export default function BlendPage() {
         
         accountAddress = result.account.address;
         
+        if (!accountAddress) {
+          throw new Error('Account address not found in authorization result.');
+        }
+        
+        console.log('✅ Account Address:', accountAddress.slice(0, 10) + '...');
+        
       } catch (authError) {
-        if (authError.message?.includes('timeout')) throw new Error('Connection timed out.');
-        if (authError.message?.includes('popup')) throw new Error('Popup blocked.');
+        console.error('❌ Xumm auth error:', authError);
+        if (authError.message?.includes('timeout')) {
+          throw new Error('Connection timed out. Please allow popups.');
+        } else if (authError.message?.includes('popup')) {
+          throw new Error('Popup blocked. Allow pop-ups for emocreations.skin.');
+        }
         throw authError;
       }
 
@@ -912,18 +936,26 @@ export default function BlendPage() {
         line => line.currency === XEC_CONFIG.currency && line.account === XEC_CONFIG.issuer
       );
       
-      if (trustline) xecBalance = parseFloat(trustline.balance);
+      if (trustline) {
+        xecBalance = parseFloat(trustline.balance);
+      }
 
       let xecPriceUsd = 0.0004;
       try {
         const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
         if (priceResponse.ok) {
           const priceData = await priceResponse.json();
-          xecPriceUsd = priceData.ecash?.usd || priceData.xec?.usd || 0.0004;
+          xecPriceUsd = priceData.ecash?.usd
+            || priceData['ecash']?.usd
+            || priceData.xec?.usd
+            || 0.0004;
         }
-      } catch (e) { console.warn('Fallback XEC price:', e); }
+      } catch (e) {
+        console.warn('Using fallback XEC price:', e);
+      }
       
       const usdValue = xecBalance * xecPriceUsd;
+
       setXecBalance(xecBalance);
       setUsdValue(usdValue);
 
@@ -952,15 +984,22 @@ export default function BlendPage() {
         window.location.href = `/blend-delivery?blend=${targetProduct.slug}&verified=true&ai=${!!generatedBlend}&payment=xec`;
       } else {
         setVerificationState('insufficient');
-        alert(`Insufficient balance. Need ${targetProduct.xec} XEC.`);
+        alert(`Insufficient XEC balance. Need ${targetProduct.xec} XEC (≈$${XEC_CONFIG.requiredUsdThreshold} USD). You have ${xecBalance.toFixed(2)} XEC (≈$${usdValue.toFixed(2)}).`);
       }
+
     } catch (error) {
       console.error('❌ Verification error:', error);
       setVerificationState('idle');
-      if (error.message?.includes('timeout')) alert('Wallet connection timed out.');
-      else if (error.message?.includes('popup')) alert('Allow popups to continue.');
-      else if (error.message?.includes('Configuration Error')) alert(error.message);
-      else alert('Failed to verify wallet: ' + error.message);
+      
+      if (error.message?.includes('timeout')) {
+        alert('Wallet connection timed out. Please allow popups and try again.');
+      } else if (error.message?.includes('popup') || error.message?.includes('blocked')) {
+        alert('Please allow popups for emocreations.skin to connect your wallet.');
+      } else if (error.message?.includes('Configuration Error')) {
+        alert(error.message);
+      } else {
+        alert('Failed to verify wallet: ' + error.message);
+      }
     }
   };
 
@@ -974,7 +1013,11 @@ export default function BlendPage() {
   };
 
   if (!product) {
-    return (<div className="min-h-screen bg-black text-white flex items-center justify-center"><p>Loading blend details...</p></div>);
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <p>Loading blend details...</p>
+      </div>
+    );
   }
 
   const targetProduct = generatedBlend || product;
@@ -984,13 +1027,26 @@ export default function BlendPage() {
       {/* Hero Banner */}
       <div
         className="relative h-80 flex items-center justify-center"
-        style={{ backgroundImage: `url('/about-xec-banner.jpg')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }}
+        style={{
+          backgroundImage: `url('/about-xec-banner.jpg')`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
       >
         <div className="absolute inset-0 bg-black/70"></div>
-        <div className="absolute top-6 left-6 z-20"><img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" /></div>
+        <div className="absolute top-6 left-6 z-20">
+          <img src="/xec-logo.png" alt="XEC Token" className="h-10 w-auto" />
+        </div>
         <div className="relative z-10 text-center px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4">{generatedBlend ? (generatedBlend.preview ? '🔒 Preview: ' : '✨ ') + (generatedBlend.name || targetProduct.name) : targetProduct.name}</h1>
-          <p className="text-lg text-gray-300">{generatedBlend ? (generatedBlend.preview ? 'Unlock with XEC or PayPal to see full recipe' : 'Personalized for your wellness journey. Powered by AI + $XEC.') : 'Unlock this AI-curated blend. Powered by $XEC.'}</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-4">
+            {generatedBlend ? '✨ Your AI-Curated Blend' : targetProduct.name}
+          </h1>
+          <p className="text-lg text-gray-300">
+            {generatedBlend
+              ? 'Personalized for your wellness journey. Powered by AI + $XEC.'
+              : 'Unlock this AI-curated blend. Powered by $XEC.'}
+          </p>
         </div>
       </div>
 
@@ -999,73 +1055,89 @@ export default function BlendPage() {
         <section className="py-12 px-6 max-w-4xl mx-auto">
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-2xl border border-turquoise/30 mb-8">
             <h2 className="text-2xl font-bold mb-4 text-turquoise">🤖 Create Your Custom Blend</h2>
-            <p className="text-gray-300 mb-4">Describe your wellness goals, pain points, or desired effects. Our AI will craft a personalized essential oil recipe just for you.</p>
-            <textarea value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder="e.g., I need relief from evening anxiety and trouble sleeping..." className="w-full h-32 p-4 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-turquoise focus:border-transparent resize-none mb-4" />
-            {generationError && <p className="text-red-400 text-sm mb-3">{generationError}</p>}
-            <button onClick={handleGenerateBlend} disabled={isGenerating || !userInput.trim()} className="w-full bg-turquoise hover:bg-teal-400 disabled:opacity-50 text-black py-3 px-4 rounded font-medium transition flex items-center justify-center gap-2">{isGenerating ? (<><div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>Crafting your blend...</>) : ('✨ Generate My AI Blend')}</button>
-            <p className="text-xs text-gray-500 mt-3 text-center">Powered by emocreations.skin_ai • Results vary • Not medical advice</p>
+            <p className="text-gray-300 mb-4">
+              Describe your wellness goals, pain points, or desired effects. Our AI will craft a personalized essential oil recipe just for you.
+            </p>
+
+            <textarea
+              value={userInput}
+              onChange={(e) => setUserInput(e.target.value)}
+              placeholder="e.g., I need relief from evening anxiety and trouble sleeping, with a calming floral scent..."
+              className="w-full h-32 p-4 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:ring-2 focus:ring-turquoise focus:border-transparent resize-none mb-4"
+            />
+
+            {generationError && (
+              <p className="text-red-400 text-sm mb-3">{generationError}</p>
+            )}
+
+            <button
+              onClick={handleGenerateBlend}
+              disabled={isGenerating || !userInput.trim()}
+              className="w-full bg-turquoise hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black py-3 px-4 rounded font-medium transition flex items-center justify-center gap-2"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                  Crafting your blend...
+                </>
+              ) : (
+                '✨ Generate My AI Blend'
+              )}
+            </button>
+
+            <p className="text-xs text-gray-500 mt-3 text-center">
+              Powered by emocreations.skin_ai • Results vary • Not medical advice
+            </p>
           </div>
         </section>
       )}
 
-      {/* Blend Recipe Display with PREVIEW + UNLOCK UI */}
+      {/* Blend Recipe Display */}
       {(generatedBlend || !generatedBlend) && (
         <div className="py-12 px-6 max-w-4xl mx-auto">
           <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
-            <h2 className="text-2xl font-bold mb-4">{generatedBlend ? (generatedBlend.preview ? '🔒 Preview: ' : 'Your Personalized Recipe: ') : 'Blend Includes:'}{generatedBlend?.name || targetProduct.name}</h2>
-            
+            <h2 className="text-2xl font-bold mb-4">
+              {generatedBlend ? 'Your Personalized Recipe' : 'Blend Includes:'}
+            </h2>
+
             {generatedBlend ? (
               <>
                 <p className="text-gray-300 mb-4 italic">{generatedBlend.description}</p>
-                
-                {/* Price/XEC Requirement */}
-                <div className="bg-black/50 p-4 rounded-lg mb-4 border border-turquoise/30">
-                  <p className="text-sm text-gray-300">
-                    <span className="font-semibold text-turquoise">Price:</span> ${generatedBlend.price} USD 
-                    <span className="mx-2">•</span>
-                    <span className="font-semibold text-turquoise">Or:</span> {generatedBlend.xec} XEC
-                  </p>
+
+                <ul className="text-gray-300 space-y-3 mb-6">
+                  {generatedBlend.recipe.map((item, idx) => (
+                    <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
+                      <span>• {item.oil} — {item.purpose}</span>
+                      <span className="text-turquoise font-medium">{item.drops} drops</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="bg-black p-4 rounded-lg mb-4">
+                  <p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p>
                 </div>
-                
-                {!generatedBlend.preview ? (
-                  <>
-                    <ul className="text-gray-300 space-y-3 mb-6">
-                      {generatedBlend.recipe.map((item, idx) => (
-                        <li key={idx} className="flex justify-between border-b border-gray-800 pb-2">
-                          <span>• {item.oil} — {item.purpose}</span>
-                          <span className="text-turquoise font-medium">{item.drops} drops</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="bg-black p-4 rounded-lg mb-4"><p className="text-sm text-gray-400"><strong>How to use:</strong> {generatedBlend.instructions}</p></div>
-                    <button onClick={() => { setGeneratedBlend(null); setUserInput(''); setShowUnlockButton(false); setUnlockOptions(null); setProduct(PREDEFINED_BLENDS['xe']); }} className="text-sm text-gray-400 hover:text-turquoise underline mt-6">← Try a different blend</button>
-                  </>
-                ) : (
-                  // ✅ PREVIEW MODE: SHOW TEASER + UNLOCK BUTTONS
-                  <div className="text-center py-6">
-                    <div className="bg-gray-800/50 p-6 rounded-xl mb-6 border border-gray-700">
-                      <p className="text-gray-400 mb-2 text-lg">🔒 Full Recipe Locked</p>
-                      <p className="text-gray-500 text-sm mb-4">Complete recipe, instructions, and usage guide are unlocked with payment.</p>
-                      <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
-                        <span>✨ {generatedBlend.xec} XEC</span>
-                        <span>•</span>
-                        <span>💳 ${generatedBlend.price} USD</span>
-                      </div>
-                    </div>
-                    
-                    {showUnlockButton && unlockOptions && (
-                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                        <button onClick={() => handleUnlockBlend('xec')} disabled={isUnlocking} className="bg-turquoise hover:bg-teal-400 disabled:opacity-50 text-black py-3 px-6 rounded font-medium transition flex items-center justify-center gap-2">{isUnlocking ? (<><div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin"></div>Connecting...</>) : ('🪙 Unlock with XEC')}</button>
-                        <button onClick={() => handleUnlockBlend('paypal')} disabled={isUnlocking} className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-3 px-6 rounded font-medium transition flex items-center justify-center gap-2">{isUnlocking ? (<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>) : ('💳 Pay with PayPal')}</button>
-                      </div>
-                    )}
-                    
-                    <button onClick={() => { setGeneratedBlend(null); setUserInput(''); setShowUnlockButton(false); setUnlockOptions(null); }} className="text-sm text-gray-400 hover:text-turquoise underline mt-6">← Try a different blend</button>
-                  </div>
-                )}
+
+                <button
+                  onClick={() => {
+                    setGeneratedBlend(null);
+                    setUserInput('');
+                    setProduct(PREDEFINED_BLENDS['xe']);
+                  }}
+                  className="text-sm text-gray-400 hover:text-turquoise underline"
+                >
+                  ← Try a predefined blend instead
+                </button>
               </>
             ) : (
-              <ul className="text-gray-300 space-y-2">{targetProduct.name === 'XE – Everybody\'s Oil' && (<><li>• 10 drops Lavender — calms nerves, reduces inflammation</li><li>• 8 drops Roman Chamomile — soothes tissue</li><li>• 6 drops Bergamot FCF — uplifts mood</li></>)} </ul>
+              <ul className="text-gray-300 space-y-2">
+                {targetProduct.name === 'XE – Everybody\'s Oil' && (
+                  <>
+                    <li>• 10 drops Lavender — calms nerves, reduces inflammation</li>
+                    <li>• 8 drops Roman Chamomile — soothes tissue</li>
+                    <li>• 6 drops Bergamot FCF — uplifts mood</li>
+                  </>
+                )}
+              </ul>
             )}
           </div>
         </div>
@@ -1075,37 +1147,98 @@ export default function BlendPage() {
       <section className="py-12 px-6 bg-gray-900">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl font-bold mb-6 text-center">Unlock With</h2>
+
+          {/* XEC Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800 mb-8">
             <h3 className="text-xl font-bold mb-4 text-turquoise">Unlock with $XEC</h3>
-            <p className="text-gray-400 mb-4">Hold {targetProduct.xec} XEC (≈${XEC_CONFIG.requiredUsdThreshold} USD) to unlock instantly.{generatedBlend && <span className="block mt-2 text-sm text-turquoise">✨ AI-generated blends require the same XEC threshold</span>}</p>
+            <p className="text-gray-400 mb-4">
+              Hold {targetProduct.xec} XEC (≈${XEC_CONFIG.requiredUsdThreshold} USD) to unlock instantly.
+              {generatedBlend && <span className="block mt-2 text-sm text-turquoise">✨ AI-generated blends require the same XEC threshold</span>}
+            </p>
+
             <div className="flex flex-col sm:flex-row gap-3">
-              <button onClick={handleVerifyWallet} disabled={verificationState === 'verifying'} className="flex-1 bg-turquoise hover:bg-teal-400 disabled:opacity-50 text-black py-3 px-4 rounded font-medium transition">{verificationState === 'verifying' ? '⏳ Connecting...' : '✅ Pay with XEC'}</button>
-              <Link href="/get-started" className="flex-1 text-center border border-turquoise text-turquoise hover:bg-turquoise/10 py-3 px-4 rounded font-medium transition">🪙 Get XEC</Link>
+              <button
+                onClick={handleVerifyWallet}
+                disabled={verificationState === 'verifying'}
+                className="flex-1 bg-turquoise hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed text-black py-3 px-4 rounded font-medium transition"
+              >
+                {verificationState === 'verifying' ? '⏳ Connecting...' : '✅ Pay with XEC'}
+              </button>
+              <Link
+                href="/get-started"
+                className="flex-1 text-center border border-turquoise text-turquoise hover:bg-turquoise/10 py-3 px-4 rounded font-medium transition"
+              >
+                🪙 Get XEC
+              </Link>
             </div>
-            {verificationState === 'unlocked' && <div className="mt-4 text-green-400">✅ Unlocked! You hold {xecBalance.toFixed(2)} XEC (${usdValue.toFixed(2)})</div>}
-            {verificationState === 'insufficient' && <div className="mt-4 text-red-400">❌ Insufficient balance. Need {targetProduct.xec} XEC.<br /><Link href="/get-started" className="text-turquoise hover:underline mt-1 inline-block">Get more XEC →</Link></div>}
+
+            {verificationState === 'unlocked' && (
+              <div className="mt-4 text-green-400">
+                ✅ Unlocked! You hold {xecBalance.toFixed(2)} XEC (${usdValue.toFixed(2)})
+              </div>
+            )}
+
+            {verificationState === 'insufficient' && (
+              <div className="mt-4 text-red-400">
+                ❌ Insufficient balance. Need {targetProduct.xec} XEC.
+                <br />
+                <Link href="/get-started" className="text-turquoise hover:underline mt-1 inline-block">
+                  Get more XEC →
+                </Link>
+              </div>
+            )}
           </div>
+
+          {/* PayPal Option */}
           <div className="bg-black p-6 rounded-2xl border border-gray-800">
             <h3 className="text-xl font-bold mb-4">Or Pay with Card</h3>
-            <p className="text-gray-400 mb-4">Secure checkout via PayPal. Ships in 3–5 days.{generatedBlend && <span className="block mt-2 text-sm text-turquoise">✨ Your custom AI recipe will be included</span>}</p>
+            <p className="text-gray-400 mb-4">
+              Secure checkout via PayPal. Ships in 3–5 days.
+              {generatedBlend && <span className="block mt-2 text-sm text-turquoise">✨ Your custom AI recipe will be included</span>}
+            </p>
             <div id="paypal-button-container" className="text-center"></div>
           </div>
         </div>
       </section>
 
+      {/* Predefined Blends Quick Select */}
       {!generatedBlend && (
         <section className="py-12 px-6 max-w-4xl mx-auto">
           <h3 className="text-xl font-bold mb-4 text-center">Or Choose a Predefined Blend</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Object.entries(PREDEFINED_BLENDS).slice(0, 8).map(([slug, blend]) => (
-              <button key={slug} onClick={() => handleSelectPredefined(slug)} className={`p-3 rounded-lg border text-sm transition ${product.slug === slug ? 'border-turquoise bg-turquoise/10 text-turquoise' : 'border-gray-700 hover:border-turquoise hover:bg-gray-800'}`}>{blend.name}</button>
+              <button
+                key={slug}
+                onClick={() => handleSelectPredefined(slug)}
+                className={`p-3 rounded-lg border text-sm transition ${
+                  product.slug === slug
+                    ? 'border-turquoise bg-turquoise/10 text-turquoise'
+                    : 'border-gray-700 hover:border-turquoise hover:bg-gray-800'
+                }`}
+              >
+                {blend.name}
+              </button>
             ))}
           </div>
         </section>
       )}
 
+      {/* Trust & Compliance */}
+      <section className="py-8 px-6 text-center text-gray-500 text-sm">
+        <p>
+          Formulated with cellular wellness in mind. Not a treatment. Complementary support only.
+          <br />
+          Consult your healthcare provider before use. AI suggestions are for entertainment and wellness exploration.
+        </p>
+      </section>
+
+      {/* Footer */}
       <footer className="py-10 px-6 text-center text-gray-500 text-sm border-t border-gray-800">
-        <p className="mb-4">Follow the science:<a href="https://instagram.com/emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a> • <a href="https://tiktok.com/@emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a></p>
+        <p className="mb-4">
+          Follow the science:
+          <a href="https://instagram.com/emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a> •
+          <a href="https://tiktok.com/@emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a>
+        </p>
         <p>© 2025 EmoCreations.skin — Crafted with cellular wellness in mind.</p>
       </footer>
     </div>
