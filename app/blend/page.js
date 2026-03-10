@@ -61,17 +61,14 @@ export default function BlendPage() {
     const lowerInput = input.toLowerCase();
     
     // ✅ Comprehensive keyword mappings with weighted scores
-    // Higher weight = stronger signal for that condition
     const conditionMap = {
       'menopause': {
         weight: 0,
         keywords: [
-          // Primary symptoms
           'menopause', 'menopausal', 'peri-menopause', 'perimenopause', 'post-menopause', 'postmenopause',
           'hot flash', 'hot flashes', 'hotflush', 'hot flushes', 'night sweat', 'night sweats',
           'hormone', 'hormones', 'hormonal', 'hormone imbalance', 'hormonal imbalance',
           'estrogen', 'progesterone', 'oestrogen', 'low estrogen', 'declining estrogen',
-          // Related symptoms
           'mood swing', 'mood swings', 'irritability', 'emotional roller', 'weepy', 'tearful',
           'vaginal dry', 'vaginal dryness', 'dryness down there', 'intimate dryness',
           'libido', 'low libido', 'sex drive', 'decreased desire',
@@ -87,17 +84,14 @@ export default function BlendPage() {
       'stress': {
         weight: 0,
         keywords: [
-          // Primary emotions
           'stress', 'stressed', ' stressful', 'overwhelm', 'overwhelmed', 'overwhelming',
           'anxiety', 'anxious', 'anxiousness', 'panic', 'panic attack', 'nervous', 'nervousness',
           'worry', 'worried', 'wor rying', 'fear', 'afraid', 'scared', 'frightened',
           'tension', 'tense', 'tightness', 'on edge', 'edgy', 'restless', 'agitated',
-          // Physical symptoms
           'racing heart', 'heart pound', 'chest tigh t', 'short breath', 'breathless',
           'shaking', 'trembling', 'sweaty', 'clammy', 'cold sweat', 'hot flash',
           'muscle tight', 'tight shoulders', 'tight neck', 'jaw clench',  'teeth grind',
           'stomach knot', 'butterfly', 'nauseous', 'queasy', 'digestive issue',
-          // Mental symptoms
           'can\'t focus', 'can not focus', 'distracted', 'scattered', 'racing thought', 'raci ng thoughts',
           'overthinking', 'ruminate', 'rumination', 'can\'t shut off', 'mind racing',
           'exhausted', 'burnout', 'burnt out', 'drained', 'depleted', 'fatigued', 'tired ',
@@ -111,18 +105,15 @@ export default function BlendPage() {
       'headache': {
         weight: 0,
         keywords: [
-          // Types of headaches
           'headache', 'head ache', 'head pain', 'head hurting', 'hurting head',
            'migraine', 'migraines', 'migraine attack', 'migraine headache', 'hemiplegic',
           'tension headache', 'tension head', 'stress headache', 'pressure headache',
           'cluster  headache', 'sinus headache', 'sinus pressure', 'sinus pain',
           'hormone headache', 'menstrual migraine', 'period headache',
-          // Pain descriptions
           'throbbing', 'pounding', 'pulsing', 'pulsatin g', 'stabbing', 'shooting',
           'pressure', 'tight band', 'vice grip', 'squeezing', 'constricting',
           'behind eye', 'eye pain', 'one side', 'unilateral', 'left side', 'right  side',
           'neck pain', 'stiff neck', 'shoulder pain', 'upper back pain',
-          // Associated symptoms
           'light sensitive', 'sensitive to light', 'photophobia', 'sound sensitive',
           'nausea', 'nauseo us', 'vomiting', 'throw up', 'sick to stomach',
           'aura', 'visual disturbance', 'blurry vision', 'spots', 'flashes', 'zigzag',
@@ -135,22 +126,18 @@ export default function BlendPage() {
       'sciatic': {
         weight: 0,
         keywords: [
-          // Primary condition
           'sciatic', 'sciatica', 'sciatic nerve', 'sciatic  pain', 'sciatic nerve pain',
           'piriformis', 'piriformis syndrome', 'deep gluteal',
-          // Pain location
           'lower back', 'low back', 'lumbar', 'buttock', 'butt pain', 'glute pain',
           'hip p ain', 'leg pain', 'thigh pain', 'calf pain', 'foot pain',
           'shooting pain', 'radiating pain', 'traveling pain', 'down the leg',
           'one side', 'unilateral', 'left leg', 'ri ght leg',
-          // Pain quality
           'burning', 'burning sensation', 'electric', 'electric shock', 'shooting',
           'tingling', 'pins and needles', 'numbness', 'numb', 'weakness', 'weak leg',
           's harp pain', 'stabbing', 'intense pain', 'severe pain',
-          // Triggers & relief
           'sitting long', 'prolonged sitting', 'driving long', 'stand up', 'bend over',
           'lift heavy', 'lifting', 'twist', ' spinal', 'disc herniation', 'herniated disc',
-          'bulging disc', 'slipped disc', 'spinal stenosis', 'bone spur',
+          'bulging disc', 'slipped disc', 'spinal stenosis', 'bone Spur',
           'stretch help', 'stretching helps', 'walk help', 'lying do wn helps',
           'physical therapy', 'chiropractic', 'massage therapy', 'nerve glide'
         ]
@@ -158,7 +145,6 @@ export default function BlendPage() {
       'joint': {
         weight: 0,
         keywords: [
-          // Primary conditions
           'joint', 'joints', 'joint pain',  'joint pain relief', 'aching joints',
           'arthritis', 'osteoarthritis', 'rheumatoid arthritis', 'ra', 'oa',
           'gout', 'gouty', 'pseudogout', 'inflammatory arthritis',
@@ -172,7 +158,6 @@ export default function BlendPage() {
           'ankle', 'ankles', 'ankle pain', 'foot pain', ' heel pain',
           'spine', 'back', 'vertebrae', 'facet joint', 'spinal joint',
           'jaw', 'tmj', 'temporomandibular', 'jaw pain', 'clicking jaw',
-          // Symptoms
           'stiff', 'stiffness', 'mor ning stiffness', 'stiff in morning', 'locked',
           'swelling', 'swollen', 'inflamed', 'inflammation', 'redness', 'warmth',
           'creaking', 'cracking', 'popping', 'grinding', 'b one on bone',
@@ -210,7 +195,6 @@ export default function BlendPage() {
       'musclepain': {
         weight: 0,
         keywords: [
-          // Primary pain types
           'muscle', 'muscles', 'muscle pain', 'muscle ache', 'mus cle aches',
           'sore muscle', 'sore muscles', 'muscle soreness', 'delayed onset', 'doms',
           'muscle spasm', 'spasm', 'cramp', 'cramps', 'charley horse', 'tight muscle',
@@ -226,7 +210,7 @@ export default function BlendPage() {
           'repetitive', 'repetition', 'same motion', 'typing', 'comp uter',
           'poor posture', 'posture issue', 'desk job', 'sitting all day',
           'heavy lift', 'lifting heavy', 'manual labor', 'physical work',
-          'dehydration', 'electrolyte ' , 'magnesium', 'potassium', 'mineral',
+          'dehydration', 'electrolyte ', 'magnesium', 'potassium', 'mineral',
           'stress tension', 'emotional tension', 'hold tension', 'carry stress',
           'stretch', 'stretching', 'massage', 'foam roll', 'heat',  'ice',
           'rest', 'recovery', 'active recovery', 'physical therapy', 'chiropractic'
@@ -235,7 +219,6 @@ export default function BlendPage() {
       'digestion': {
         weight: 0,
         keywords: [
-          // Primary digestive issues
           'digest', 'digestion', 'dige stive', 'digestive issue', 'digestive problem',
           'gut', 'gut health', 'gut issue', 'stomach', 'stomach issue', 'stomach problem',
           'gi', 'gastrointestinal', 'gi tract', ' bowel', 'bowel movement', 'bm',
@@ -262,7 +245,6 @@ export default function BlendPage() {
       'shoulder': {
         weight: 0,
         keywords: [
-          // Primary location
           's houlder', 'shoulders', 'shoulder pain', 'shoulder ache', 'aching shoulder',
           'left shoulder', 'right shoulder', 'both shoulders', 'shoulder blade',
           'scapula', 'scapular' , 'upper back', 'between shoulder', 'shoulder blade pain',
@@ -287,7 +269,6 @@ export default function BlendPage() {
       'glucose': {
         weight: 0,
         keywords: [
-          // Primary conditions
           'glucose', 'blood sugar', 'sugar level', 'glucose level', 'glucose monitoring',
           'd iabetes', 'diabetic', 'type 1', 'type 2', 'type 1 diabetes', 'type 2 diabetes',
           'prediabetes', 'pre-diabetes', 'borderline diabetic', 'insulin resistance',
@@ -313,7 +294,6 @@ export default function BlendPage() {
       'metabolism': {
         weight: 0,
         keywords: [
-          // Primary metabolism issues
           'metabolism', 'metab olic', 'slow metabolism', 'fast metabolism', 'metabolism boost',
           'metabolic rate', 'bmr', 'basal metabolic', 'calorie burn', 'burn calories',
           'thyroid', 'thyroid issue' , 'hypothyroid', 'hyperthyroid', 'underactive thyroid',
@@ -343,7 +323,6 @@ export default function BlendPage() {
       'lupus': {
         wei ght: 0,
         keywords: [
-          // Primary condition
           'lupus', 'sle', 'systemic lupus', 'lupus erythematosus', 'autoimmune lupus',
           'lupus flare', 'flare up', 'flare-up', 'lupus symptoms', 'living wi th lupus',
           'autoimmune', 'autoimmune disease', 'autoimmune disorder', 'immune system',
@@ -373,7 +352,6 @@ export default function BlendPage() {
       'opioid': {
         weight : 0,
         keywords: [
-          // Primary recovery terms
           'opioid', 'opioids', 'opiate', 'opiates', 'narcotic', 'narcotics',
           'recovery', 'recovering', 'recovery journey', 'in recovery', 'sobriety',
           ' sober', 'getting sober', 'stay sober', 'relapse', 'relapse prevention',
@@ -390,7 +368,7 @@ export default function BlendPage() {
           'craving', 'urge', 'trigger', 'drug seek ing', 'obsession',
           'pain management', 'chronic pain', 'pain relief', 'alternative pain',
           'non opioid', 'opioid free', 'natural pain', 'holistic pain',
-          'nerve pain ' , 'neuropathy', 'back pain', 'surgery recovery', 'injury pain',
+          'nerve pain ', 'neuropathy', 'back pain', 'surgery recovery', 'injury pain',
           'physical therapy', 'massage', 'acupuncture', 'meditation', 'mindfulness',
           'mat', 'medication assisted' , 'suboxone', 'methadone', 'vivitrol', 'naloxone',
           'narcan', 'overdose prevention', 'harm reduction', 'needle exchange',
@@ -404,7 +382,6 @@ export default function BlendPage() {
       'blood-type-a': {
         weight: 0,
         keywords: [
-          // Blood type specific
           'blood type', 'bloodtype', 'type a', 'type a positive', 'type a negative',
           'a positive', 'a negative', 'blood  type diet', 'eat right 4 your type',
           'dadamo', 'peter dadamo', 'blood type nutrition', 'genotype diet',
@@ -433,7 +410,6 @@ export default function BlendPage() {
       'telomere': {
         weight: 0,
         keywords: [
-          // Primary anti-aging terms
           'telomere', 'telomeres', 'telomere length', 'telom ere shortening', 'telomerase',
           'anti-aging', 'anti aging', 'age reversal', 'reverse aging', 'slow aging',
           'longevity', 'long life', 'life extension', 'healthy aging', ' graceful aging',
@@ -450,7 +426,7 @@ export default function BlendPage() {
           'memory', 'cognitive decline', 'brain fog', 'mental sharpness', 'focus',
           'muscle loss', 'sarco penia', 'strength loss', 'frail', 'frailty',
           'bone loss', 'bone density', 'osteoporosis', 'joint stiffness',
-          'stress management', 'chronic stress', 'cortisol', 'adrenal ' , 'hpa axis',
+          'stress management', 'chronic stress', 'cortisol', 'adrenal ', 'hpa axis',
           'sleep quality', 'deep sleep', 'sleep duration', 'circadian', 'melatonin',
           'exercise', 'physical activity', 'strength training', 'cardio', 'movement',
            'diet', 'nutrition', 'calorie restriction', 'intermittent fasting', 'fasting',
@@ -463,7 +439,6 @@ export default function BlendPage() {
       'unbroken': {
         weight: 0,
         keywords: [
-          // Chronic illness terms
           'unbroken', 'unbroken spirit', 'chronic illness', 'chronic disease',
           'invisibl e illness', 'hidden illness', 'unseen illness', 'spoonie', 'spoon theory',
           'flare', 'flare up', 'flare-up', 'symptom flare', 'bad day', 'crash',
@@ -471,7 +446,7 @@ export default function BlendPage() {
           'autoimmune', 'autoimmune disease', 'immune disorder', 'immune system',
           'fibromyalgia', 'fms', 'fibro', 'myalgic',  'encephalomyelitis', 'me',
           'mecfs', 'chronic fatigue syndrome', 'post viral', 'long covid', 'long-haul',
-          'pots', 'dysautonomia', 'autonomic', 'orthostatic', 'heart rate ' , 'blood pressure',
+          'pots', 'dysautonomia', 'autonomic', 'orthostatic', 'heart rate ', 'blood pressure',
           'ehlers danlos', 'eds', 'hypermobile', 'joint hypermobility', 'connective tissue',
           'mast cell', 'mcast', 'histamine', 'mcas', 'allergic', 'sensitiv ity',
           'pain', 'body pain', 'widespread pain', 'all over pain', 'aching', 'sore',
@@ -495,7 +470,6 @@ export default function BlendPage() {
       'queen': {
         weight: 0,
         keywords: [
-          // Self-love & empowerment
           'queen', 'queen energy', 'empress', 'goddess', 'divine  feminine', 'feminine',
           'self-love', 'love myself', 'self worth', 'self value', 'self esteem',
           'confidence', 'confident', 'empowerment', 'empowered', 'powerful', 'power' ,
@@ -513,7 +487,7 @@ export default function BlendPage() {
           'abundance', 'prosperity', 'manifest', 'attract', 'deserve good ',
           'sacred', 'sacred feminine', 'divine', 'spiritual', 'soul', 'spirit',
           'energy', 'vibration', 'frequency', 'align', 'alignment', 'flow',
-          'intuition', 'intuitive ' , 'inner wisdom', 'inner voice', 'trust',
+          'intuition', 'intuitive ', 'inner wisdom', 'inner voice', 'trust',
           'ritual', 'ceremony', 'sacred space', 'altar', 'meditation', 'prayer',
           'rose', 'flower', 'bloom', 'blossom', 'petal', 'fragra nt', 'beautiful',
           'luxury', 'indulge', 'pamper', 'treat', 'special', 'precious', 'treasure'
@@ -522,12 +496,11 @@ export default function BlendPage() {
       'king': {
         weight: 0,
         keywords: [
-          // Masculine energy & leadership
           'king', 'king energy',  'emperor', 'divine masculine', 'masculine',
           'leader', 'leadership', 'lead', 'command', 'authority', 'power',
           'strength', 'strong', 'inner strength', 'core strength', ' solid', 'grounded',
           'confidence', 'confident', 'self-assured', 'certain', 'decisive', 'decide',
-          'purpose', 'mission', 'vision', 'direction', 'path', 'calling', 'destiny ' ,
+          'purpose', 'mission', 'vision', 'direction', 'path', 'calling', 'destiny ',
           'legacy', 'impact', 'influence', 'make mark', 'contribution', 'significance',
           'clarity', 'clear', 'mental clarity', 'focus', 'concentration', 'sharp',
           'discipl ine', 'disciplined', 'commitment', 'dedication', 'persistence',
@@ -544,7 +517,7 @@ export default function BlendPage() {
           'energy', 'vitality', 'vigor', 'life force', 'chi', 'prana',
           'ground', 'gr ounding', 'earth', 'stable', 'rooted', 'foundation',
           'cedar', 'pine', 'wood', 'forest', 'mountain', 'stone', 'earth',
-          'ritual', 'ceremony', 'sacred', 'spiritual', 'soul ' , 'spirit',
+          'ritual', 'ceremony', 'sacred', 'spiritual', 'soul ', 'spirit',
           'sovereign', 'sovereignty', 'rule', 'reign', 'throne', 'kingdom', 'domain'
         ]
       }
@@ -559,20 +532,20 @@ export default function BlendPage() {
       
       for (const keyword of data.keywords) {
         if (lowerInput.includes(keyword)) {
-          score += keyword.split(' ').length  > 1 ? 3 : 1;
+          score += keyword.split(' ').length > 1 ? 3 : 1;
           if (data.keywords.indexOf(keyword)  < 5) {
             score += 2;
           }
         }
       }
       
-      if (score  > bestScore) {
+      if (score > bestScore) {
         bestScore = score;
         bestMatch = condition;
       }
     }
 
-    return bestScore  >= 3 ? bestMatch : null;
+    return bestScore >= 3 ? bestMatch : null;
   };
 
   useEffect(() => {
@@ -700,11 +673,7 @@ export default function BlendPage() {
       
       console.log('🧪 Preview Response:', data);
 
-      if (!response.ok && response.status !== 402) {
-        throw new Error(data.error || `HTTP ${response.status}`);
-      }
-
-      // ✅ STEP 2: Handle 402 Payment Required / Preview Mode
+      // ✅ STEP 2: Handle preview response (402 Payment Required or 200 with preview)
       if (response.status === 402 || data.preview) {
         setGeneratedBlend({
           name: data.preview?.name || data.blend?.name || 'Custom Blend',
@@ -735,14 +704,21 @@ export default function BlendPage() {
         return; // ✅ Stop here - user must unlock to see full recipe
       }
 
-      // ✅ If already authorized (return full blend)
-      if (data.blend && Array.isArray(data.blend.recipe)) {
-        setGeneratedBlend({ ...data.blend });
-        setProduct({ ...data.blend });
-      } else {
-        throw new Error('Invalid blend response');
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
       }
 
+      // ✅ STEP 3: Handle full blend response (already authorized)
+      const blendData = data.blend;
+      
+      if (!blendData?.name || !blendData?.recipe || !Array.isArray(blendData.recipe)) {
+        console.error('❌ Invalid blend structure:', blendData);
+        throw new Error('Blend response missing required fields');
+      }
+
+      setGeneratedBlend({ ...blendData });
+      setProduct({ ...blendData });
+      
     } catch (error) {
       console.error('❌ Blend generation error:', error);
       setGenerationError(error.message || 'Failed to generate blend. Please try again.');
@@ -763,7 +739,7 @@ export default function BlendPage() {
 
     try {
       if (paymentMethod === 'xec') {
-        // ✅ Load Xamm SDK dynamically
+        // ✅ Load Xumm SDK dynamically
         if (!window.Xumm) {
           await new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -776,31 +752,60 @@ export default function BlendPage() {
 
         const XUMM_API_KEY = process.env.NEXT_PUBLIC_XUMM_API_KEY || 'your-api-key-here';
         
-        // ✅ STEP 1: Validate API key
+        // ✅ Validate API key first
         if (!XUMM_API_KEY || XUMM_API_KEY === 'your-api-key-here' || XUMM_API_KEY.length < 10) {
-          throw new Error('Xumm Wallet API key is not configured. Please check your Vercel environment variables.');
+          throw new Error('❌ Configuration Error:\n\nYour Xumm Wallet API key is not properly configured.\n\nPlease check Vercel environment variables → NEXT_PUBLIC_XUMM_API_KEY');
         }
         
         const xumm = new window.Xumm(XUMM_API_KEY);
         xummRef.current = xumm;
 
-        // ✅ STEP 2: Authorize Connection (Modern Promise Pattern - Removed .off() calls)
-        const result = await xumm.authorize();
-        if (!result || !result.account) {
-          throw new Error('Authorization failed - please allow popups and retry.');
+        console.log('🔐 Requesting Xumm authorization...');
+        
+        // ✅ STEP 1: Authorize Connection (Modern Promise Pattern - Removed .off() calls)
+        let xrplAddress;
+        try {
+          const result = await xumm.authorize();
+          
+          console.log('✅ Authorization result:', result);
+          
+          if (!result || !result.account || !result.account.address) {
+             // Fallback attempt if structure differs slightly
+             if(result && result.transactionId) {
+                 // Sometimes only transaction ID is returned first
+                 // For now, we assume result.account exists
+                 throw new Error('Authorization completed but account data missing. Try again.');
+             } else {
+                 throw new Error('Authorization failed or denied.');
+             }
+          }
+          
+          xrplAddress = result.account.address;
+          
+          if (!xrplAddress) {
+            throw new Error('Account address not found in authorization result. Check permissions.');
+          }
+          
+          console.log('✅ XRPL Address:', xrplAddress.slice(0, 10) + '...');
+          
+        } catch (authError) {
+          console.error('❌ Xumm auth error:', authError);
+          if (authError.message?.includes('timeout')) {
+            throw new Error('Connection timed out. Please allow popups.');
+          } else if (authError.message?.includes('popup')) {
+            throw new Error('Popup blocked. Allow pop-ups for emocreations.skin.');
+          }
+          throw authError;
         }
-        const accountAddress = result.account.address;
 
-        console.log('✅ Account Address:', accountAddress.slice(0, 10) + '...');
-
-        // ✅ STEP 3: Verify XEC balance via XRPL
+        // ✅ STEP 2: Verify XEC balance via XRPL
         if (!xrplClientRef.current) {
-          throw new Error('XRPL client not initialized');
+            throw new Error('XRPL client not initialized');
         }
         
         const response = await xrplClientRef.current.request({
           method: 'account_lines',
-          account: accountAddress,
+          account: xrplAddress,
           peer: XEC_CONFIG.issuer,
         });
 
@@ -830,14 +835,14 @@ export default function BlendPage() {
         // ✅ Check threshold
         if (xecBalance >= generatedBlend.xec && usdValue >= XEC_CONFIG.requiredUsdThreshold) {
           // Save address for future unlocks
-          localStorage.setItem('xrplAddress', accountAddress);
+          localStorage.setItem('xrplAddress', xrplAddress);
 
           // Request FULL blend with address header
           const finalResponse = await fetch('/api/generate-blend', {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              'x-xrpl-address': accountAddress
+              'x-xrpl-address': xrplAddress
             },
             body: JSON.stringify({
               condition: detectCondition(userInput),
@@ -847,7 +852,7 @@ export default function BlendPage() {
           });
 
           if (!finalResponse.ok) {
-            throw new Error('Final verification failed');
+            throw new Error('Final verification failed: ' + finalResponse.status);
           }
 
           const finalData = await finalResponse.json();
@@ -874,8 +879,19 @@ export default function BlendPage() {
       }
 
     } catch (error) {
-      console.error('Unlock error:', error);
-      setGenerationError(error.message || 'Failed to unlock blend. Please try again.');
+      console.error('❌ Unlock error:', error);
+      setGenerationError(error.message || 'Failed to unlock blend. See console for details.');
+      
+      // Better alert for common errors
+      if (error.message.includes('Configuration Error')) {
+          alert(error.message);
+      } else if (error.message.includes('popup')) {
+          alert('Please allow popups for emocreations.skin and try again.');
+      } else if (error.message.includes('timed out')) {
+          alert('Connection timed out. Please try again.');
+      } else {
+          alert(error.message);
+      }
     } finally {
       setIsUnlocking(false);
     }
@@ -906,16 +922,44 @@ export default function BlendPage() {
       
       // ✅ Validate API key first
       if (!XUMM_API_KEY || XUMM_API_KEY === 'your-api-key-here' || XUMM_API_KEY.length < 10) {
-        throw new Error('Xumm Wallet API key is not configured. Please check your Vercel environment variables.');
+        throw new Error('❌ Configuration Error:\n\nYour Xumm Wallet API key is not properly configured.\n\nPlease check Vercel environment variables → NEXT_PUBLIC_XUMM_API_KEY');
       }
       
       const xumm = new window.Xumm(XUMM_API_KEY);
       xummRef.current = xumm;
 
-      // ✅ Use Promise-based authorization (Removed .off() calls)
-      const result = await xumm.authorize();
-      const accountAddress = result.account.address;
+      console.log('🔐 Requesting Xumm authorization...');
       
+      // ✅ STEP 1: Authorize Connection (Modern Promise Pattern - Removed .off() calls)
+      let accountAddress;
+      try {
+        const result = await xumm.authorize();
+        
+        console.log('✅ Authorization result:', result);
+        
+        if (!result || !result.account || !result.account.address) {
+          throw new Error('Authorization failed or denied.');
+        }
+        
+        accountAddress = result.account.address;
+        
+        if (!accountAddress) {
+          throw new Error('Account address not found in authorization result.');
+        }
+        
+        console.log('✅ Account Address:', accountAddress.slice(0, 10) + '...');
+        
+      } catch (authError) {
+        console.error('❌ Xumm auth error:', authError);
+        if (authError.message?.includes('timeout')) {
+          throw new Error('Connection timed out. Please allow popups.');
+        } else if (authError.message?.includes('popup')) {
+          throw new Error('Popup blocked. Allow pop-ups for emocreations.skin.');
+        }
+        throw authError;
+      }
+
+      // ✅ STEP 2: Verify XEC balance via XRPL
       const response = await xrplClientRef.current.request({
         method: 'account_lines',
         account: accountAddress,
@@ -986,8 +1030,8 @@ export default function BlendPage() {
         alert('Wallet connection timed out. Please allow popups and try again.');
       } else if (error.message?.includes('popup') || error.message?.includes('blocked')) {
         alert('Please allow popups for emocreations.skin to connect your wallet.');
-      } else if (error.message?.includes('API key') || error.message?.includes('configured')) {
-        alert('❌ Configuration Error:\n\nYour Xumm Wallet API key is not configured correctly.\n\nPlease verify:\n1. NEXT_PUBLIC_XUMM_API_KEY is set in Vercel\n2. Key matches dev.xumm.app\n3. Domain is registered with correct redirect URIs\n\nSee: https://dev.xumm.app/');
+      } else if (error.message?.includes('Configuration Error')) {
+        alert(error.message);
       } else {
         alert('Failed to verify wallet: ' + error.message);
       }
@@ -1283,8 +1327,8 @@ export default function BlendPage() {
                 key={slug}
                 onClick={() => handleSelectPredefined(slug)}
                 className={`p-3 rounded-lg border text-sm transition ${
-                  product.slug === slug 
-                    ? 'border-turquoise bg-turquoise/10 text-turquoise' 
+                  product.slug === slug
+                    ? 'border-turquoise bg-turquoise/10 text-turquoise'
                     : 'border-gray-700 hover:border-turquoise hover:bg-gray-800'
                 }`}
               >
@@ -1298,7 +1342,7 @@ export default function BlendPage() {
       {/* Trust & Compliance */}
       <section className="py-8 px-6 text-center text-gray-500 text-sm">
         <p>
-          Formulated with cellular wellness in mind. Not a treatment. Complementary support only.  
+          Formulated with cellular wellness in mind. Not a treatment. Complementary support only.
           <br />
           Consult your healthcare provider before use. AI suggestions are for entertainment and wellness exploration.
         </p>
@@ -1307,8 +1351,8 @@ export default function BlendPage() {
       {/* Footer */}
       <footer className="py-10 px-6 text-center text-gray-500 text-sm border-t border-gray-800">
         <p className="mb-4">
-          Follow the science: 
-          <a href="https://instagram.com/emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a> • 
+          Follow the science:
+          <a href="https://instagram.com/emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a> •
           <a href="https://tiktok.com/@emocreations.skin" target="_blank" rel="noopener" className="text-turquoise hover:underline ml-2">@emocreations.skin</a>
         </p>
         <p>© 2025 EmoCreations.skin — Crafted with cellular wellness in mind.</p>
