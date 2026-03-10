@@ -1,27 +1,23 @@
 // app/blend/page.js
 'use client';
-// ✅ CRITICAL: Force dynamic rendering to avoid build-time errors
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-
-// ✅ Install with: npm install xrpl
 import { Client } from 'xrpl';
 
 export default function BlendPage() {
   const [product, setProduct] = useState(null);
-  const [verificationState, setVerificationState] = useState('idle'); // idle | verifying | unlocked | insufficient
+  const [verificationState, setVerificationState] = useState('idle');
   const [xecBalance, setXecBalance] = useState(0);
   const [usdValue, setUsdValue] = useState(0);
   
-  // ✅ Poe AI State
   const [userInput, setUserInput] = useState('');
   const [generatedBlend, setGeneratedBlend] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState(null);
   
-  // ✅✅✅ NEW: Unlock Flow State Variables
+  // ✅ Unlock Flow State Variables
   const [showUnlockButton, setShowUnlockButton] = useState(false);
   const [unlockOptions, setUnlockOptions] = useState(null);
   const [isUnlocking, setIsUnlocking] = useState(false);
@@ -29,11 +25,11 @@ export default function BlendPage() {
   const xummRef = useRef(null);
   const xrplClientRef = useRef(null);
 
-  // ✅ XEC Token Configuration - CORRECT ISSUER
+  // ✅ XEC Token Configuration
   const XEC_CONFIG = {
     currency: 'XEC',
-    issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX', // ✅ YOUR XEC ISSUER
-    requiredUsdThreshold: 25, // Minimum $25 USD worth of XEC
+    issuer: 'rJzq9Xwg1ZNRmSk5uyPoHdLDffpctv26CX',
+    requiredUsdThreshold: 25,
   };
 
   // ✅ Predefined blends
@@ -54,13 +50,11 @@ export default function BlendPage() {
     'metabolism': { name: 'Metabolism Boost Elixir', price: 58, xec: 103, slug: 'metabolism' }
   };
 
-  // ✅✅✅ EXTENSIVE CONDITION KEYWORD MAPPING (15-30+ keywords per condition)
+  // ✅ Comprehensive keyword mapping with weighted scores
   const detectCondition = (input) => {
     if (!input || input.trim().length < 3) return null;
-    
     const lowerInput = input.toLowerCase();
     
-    // ✅ Comprehensive keyword mappings with weighted scores
     const conditionMap = {
       'menopause': {
         weight: 0,
@@ -75,457 +69,457 @@ export default function BlendPage() {
           'bone density', 'bone loss', 'osteoporosis risk', 'weakening bones',
           'weight gain', 'metabolism slow', 'slower metabolism', 'belly fat', 'middle age spread',
           'brain fog', 'memory lapse', 'forgetful', 'concentration issue', 'mental fog',
-          'heart palpitation', 'palpitations', 'racing heart ', 'irregular heartbeat',
+          'heart palpitation', 'palpitations', 'racing heart', 'irregular heartbeat',
           'hair thin', 'hair loss', 'thinning hair', 'dry skin', 'aging skin',
-          'midlife', 'middle age', 'change of life', 'climacteric', 'menses stop',  'period stop',
+          'midlife', 'middle age', 'change of life', 'climacteric', 'menses stop', 'period stop',
           'periods irregular', 'irregular periods', 'missed period', 'cycle change'
         ]
       },
       'stress': {
         weight: 0,
         keywords: [
-          'stress', 'stressed', ' stressful', 'overwhelm', 'overwhelmed', 'overwhelming',
+          'stress', 'stressed', 'stressful', 'overwhelm', 'overwhelmed', 'overwhelming',
           'anxiety', 'anxious', 'anxiousness', 'panic', 'panic attack', 'nervous', 'nervousness',
-          'worry', 'worried', 'wor rying', 'fear', 'afraid', 'scared', 'frightened',
+          'worry', 'worried', 'worrying', 'fear', 'afraid', 'scared', 'frightened',
           'tension', 'tense', 'tightness', 'on edge', 'edgy', 'restless', 'agitated',
-          'racing heart', 'heart pound', 'chest tigh t', 'short breath', 'breathless',
+          'racing heart', 'heart pound', 'chest tight', 'short breath', 'breathless',
           'shaking', 'trembling', 'sweaty', 'clammy', 'cold sweat', 'hot flash',
-          'muscle tight', 'tight shoulders', 'tight neck', 'jaw clench',  'teeth grind',
+          'muscle tight', 'tight shoulders', 'tight neck', 'jaw clench', 'teeth grind',
           'stomach knot', 'butterfly', 'nauseous', 'queasy', 'digestive issue',
-          'can\'t focus', 'can not focus', 'distracted', 'scattered', 'racing thought', 'raci ng thoughts',
+          'can\'t focus', 'can not focus', 'distracted', 'scattered', 'racing thought', 'racing thoughts',
           'overthinking', 'ruminate', 'rumination', 'can\'t shut off', 'mind racing',
-          'exhausted', 'burnout', 'burnt out', 'drained', 'depleted', 'fatigued', 'tired ',
+          'exhausted', 'burnout', 'burnt out', 'drained', 'depleted', 'fatigued', 'tired',
           'insomnia', 'can\'t sleep', 'trouble sleeping', 'wake up', 'early morning wake',
           'irritable', 'snappy', 'short temper', 'anger', 'frustrated', 'frustration',
-          ' cry', 'crying', 'tearful', 'emotional', 'moody', 'mood swing',
+          'cry', 'crying', 'tearful', 'emotional', 'moody', 'mood swing',
           'pressure', 'demanding', 'too much', 'can\'t cope', 'coping issue', 'handle',
-          'work stress', 'job stress' , 'deadline', 'overworked', 'under pressure'
+          'work stress', 'job stress', 'deadline', 'overworked', 'under pressure'
         ]
       },
       'headache': {
         weight: 0,
         keywords: [
           'headache', 'head ache', 'head pain', 'head hurting', 'hurting head',
-           'migraine', 'migraines', 'migraine attack', 'migraine headache', 'hemiplegic',
+          'migraine', 'migraines', 'migraine attack', 'migraine headache', 'hemiplegic',
           'tension headache', 'tension head', 'stress headache', 'pressure headache',
-          'cluster  headache', 'sinus headache', 'sinus pressure', 'sinus pain',
+          'cluster headache', 'sinus headache', 'sinus pressure', 'sinus pain',
           'hormone headache', 'menstrual migraine', 'period headache',
-          'throbbing', 'pounding', 'pulsing', 'pulsatin g', 'stabbing', 'shooting',
+          'throbbing', 'pounding', 'pulsing', 'pulsating', 'stabbing', 'shooting',
           'pressure', 'tight band', 'vice grip', 'squeezing', 'constricting',
-          'behind eye', 'eye pain', 'one side', 'unilateral', 'left side', 'right  side',
+          'behind eye', 'eye pain', 'one side', 'unilateral', 'left side', 'right side',
           'neck pain', 'stiff neck', 'shoulder pain', 'upper back pain',
           'light sensitive', 'sensitive to light', 'photophobia', 'sound sensitive',
-          'nausea', 'nauseo us', 'vomiting', 'throw up', 'sick to stomach',
+          'nausea', 'nauseous', 'vomiting', 'throw up', 'sick to stomach',
           'aura', 'visual disturbance', 'blurry vision', 'spots', 'flashes', 'zigzag',
-          'dizzy', 'dizziness', 'vertigo', 'lighthead ed', 'faint',
+          'dizzy', 'dizziness', 'vertigo', 'lightheaded', 'faint',
           'congestion', 'stuffy nose', 'runny nose', 'sinus congestion',
           'trigger', 'triggered by', 'food trigger', 'wine trigger', 'chocolate trigger',
-          'prev ent', 'prevention', 'prophylactic', 'frequency', 'chronic headache'
+          'prevent', 'prevention', 'prophylactic', 'frequency', 'chronic headache'
         ]
       },
       'sciatic': {
         weight: 0,
         keywords: [
-          'sciatic', 'sciatica', 'sciatic nerve', 'sciatic  pain', 'sciatic nerve pain',
+          'sciatic', 'sciatica', 'sciatic nerve', 'sciatic pain', 'sciatic nerve pain',
           'piriformis', 'piriformis syndrome', 'deep gluteal',
           'lower back', 'low back', 'lumbar', 'buttock', 'butt pain', 'glute pain',
-          'hip p ain', 'leg pain', 'thigh pain', 'calf pain', 'foot pain',
+          'hip pain', 'leg pain', 'thigh pain', 'calf pain', 'foot pain',
           'shooting pain', 'radiating pain', 'traveling pain', 'down the leg',
-          'one side', 'unilateral', 'left leg', 'ri ght leg',
+          'one side', 'unilateral', 'left leg', 'right leg',
           'burning', 'burning sensation', 'electric', 'electric shock', 'shooting',
           'tingling', 'pins and needles', 'numbness', 'numb', 'weakness', 'weak leg',
-          's harp pain', 'stabbing', 'intense pain', 'severe pain',
+          'sharp pain', 'stabbing', 'intense pain', 'severe pain',
           'sitting long', 'prolonged sitting', 'driving long', 'stand up', 'bend over',
-          'lift heavy', 'lifting', 'twist', ' spinal', 'disc herniation', 'herniated disc',
-          'bulging disc', 'slipped disc', 'spinal stenosis', 'bone Spur',
-          'stretch help', 'stretching helps', 'walk help', 'lying do wn helps',
+          'lift heavy', 'lifting', 'twist', 'spinal', 'disc herniation', 'herniated disc',
+          'bulging disc', 'slipped disc', 'spinal stenosis', 'bone spur',
+          'stretch help', 'stretching helps', 'walk help', 'lying down helps',
           'physical therapy', 'chiropractic', 'massage therapy', 'nerve glide'
         ]
       },
       'joint': {
         weight: 0,
         keywords: [
-          'joint', 'joints', 'joint pain',  'joint pain relief', 'aching joints',
+          'joint', 'joints', 'joint pain', 'joint pain relief', 'aching joints',
           'arthritis', 'osteoarthritis', 'rheumatoid arthritis', 'ra', 'oa',
           'gout', 'gouty', 'pseudogout', 'inflammatory arthritis',
-           'bursitis', 'tendonitis', 'tendinitis', 'synovitis',
+          'bursitis', 'tendonitis', 'tendinitis', 'synovitis',
           'knee', 'knees', 'knee pain', 'knee arthritis', 'knee swelling',
-          'hip', 'hips', 'hip pain', 'hip arthritis', 'hip r eplacement',
+          'hip', 'hips', 'hip pain', 'hip arthritis', 'hip replacement',
           'shoulder', 'shoulders', 'shoulder pain', 'frozen shoulder', 'rotator cuff',
           'elbow', 'elbows', 'elbow pain', 'tennis elbow', 'golfers elbow',
-          'wrist ', 'wrists', 'wrist pain', 'carpal tunnel', 'hand pain',
+          'wrist', 'wrists', 'wrist pain', 'carpal tunnel', 'hand pain',
           'finger', 'fingers', 'finger pain', 'knuckle pain', 'toe pain',
-          'ankle', 'ankles', 'ankle pain', 'foot pain', ' heel pain',
+          'ankle', 'ankles', 'ankle pain', 'foot pain', 'heel pain',
           'spine', 'back', 'vertebrae', 'facet joint', 'spinal joint',
           'jaw', 'tmj', 'temporomandibular', 'jaw pain', 'clicking jaw',
-          'stiff', 'stiffness', 'mor ning stiffness', 'stiff in morning', 'locked',
+          'stiff', 'stiffness', 'morning stiffness', 'stiff in morning', 'locked',
           'swelling', 'swollen', 'inflamed', 'inflammation', 'redness', 'warmth',
-          'creaking', 'cracking', 'popping', 'grinding', 'b one on bone',
+          'creaking', 'cracking', 'popping', 'grinding', 'bone on bone',
           'limited range', 'range of motion', 'can\'t bend', 'can\'t straighten',
           'weather sensitive', 'rain pain', 'cold weather', 'barometric pressure',
-          'de generative', 'wear and tear', 'cartilage', 'synovial fluid',
+          'degenerative', 'wear and tear', 'cartilage', 'synovial fluid',
           'autoimmune', 'systemic', 'chronic pain', 'flare up', 'flare-up'
         ]
       },
       'insomnia': {
         weight: 0,
-        ke ywords: [
+        keywords: [
           'insomnia', 'insomniac', 'sleepless', 'sleeplessness', 'can\'t sleep',
           'can not sleep', 'trouble sleeping', 'difficulty sleeping', 'poor sleep',
-          'bad sl eep', 'sleep problem', 'sleep issue', 'sleep disorder',
+          'bad sleep', 'sleep problem', 'sleep issue', 'sleep disorder',
           'sleep deprivation', 'sleep deprived', 'lack of sleep', 'not enough sleep',
-          'fall asleep', 'falling asleep', 'ca n\'t fall asleep', 'take forever',
+          'fall asleep', 'falling asleep', 'can\'t fall asleep', 'take forever',
           'toss and turn', 'restless', 'tossing', 'turning', 'wide awake',
-          'mind racing', 'racing thoughts', 'can\'t shut off', 'overthinking', 
+          'mind racing', 'racing thoughts', 'can\'t shut off', 'overthinking',
           'anxiety bedtime', 'nervous at night', 'bedtime anxiety',
           'stay asleep', 'staying asleep', 'wake up', 'waking up', 'frequent waking',
-          'middle of night', '3am', ' 4am', 'early morning', 'wake early',
+          'middle of night', '3am', '4am', 'early morning', 'wake early',
           'can\'t fall back', 'can\'t get back', 'up for hours', 'lie awake',
-          'light sleeper', 'light sleep', 'deep sleep', 'rem sleep', 'sle ep cycle',
+          'light sleeper', 'light sleep', 'deep sleep', 'rem sleep', 'sleep cycle',
           'unrefreshing', 'not rested', 'groggy', 'grogginess', 'sleep hangover',
           'fatigue', 'tired', 'exhausted', 'daytime sleepiness', 'nap', 'napping',
-          'energ y crash', 'afternoon crash', 'coffee dependent', 'caffeine',
+          'energy crash', 'afternoon crash', 'coffee dependent', 'caffeine',
           'noise sensitive', 'light sensitive', 'temperature', 'too hot', 'too cold',
-          'partner snore', 'snoring', 'sl eep apnea', 'breathing issue',
+          'partner snore', 'snoring', 'sleep apnea', 'breathing issue',
           'screen time', 'blue light', 'phone before bed', 'tv in bed',
           'irregular schedule', 'shift work', 'jet lag', 'time zone',
-          'bedtime  routine', 'wind down', 'relax before bed', 'sleep hygiene'
+          'bedtime routine', 'wind down', 'relax before bed', 'sleep hygiene'
         ]
       },
       'musclepain': {
         weight: 0,
         keywords: [
-          'muscle', 'muscles', 'muscle pain', 'muscle ache', 'mus cle aches',
+          'muscle', 'muscles', 'muscle pain', 'muscle ache', 'muscle aches',
           'sore muscle', 'sore muscles', 'muscle soreness', 'delayed onset', 'doms',
           'muscle spasm', 'spasm', 'cramp', 'cramps', 'charley horse', 'tight muscle',
-           'muscle tight', 'muscle tension', 'knot', 'trigger point', 'myofascial',
+          'muscle tight', 'muscle tension', 'knot', 'trigger point', 'myofascial',
           'neck pain', 'stiff neck', 'upper back', 'mid back', 'lower back',
-          'shoulder pain', 'shoulder  blade', 'trap', 'trapezius', 'rhomboid',
+          'shoulder pain', 'shoulder blade', 'trap', 'trapezius', 'rhomboid',
           'chest pain', 'pec', 'pectoral', 'arm pain', 'bicep', 'tricep',
-          'abdominal', 'abs', 'core', 'oblique', 'side pain', 'rib pain' ,
+          'abdominal', 'abs', 'core', 'oblique', 'side pain', 'rib pain',
           'quad', 'quadriceps', 'hamstring', 'calf', 'shin', 'glute', 'glutes',
           'hip flexor', 'groin', 'inner thigh', 'outer thigh', 'it band',
-          'workout', 'exercise', 'gy m', 'training', 'overuse', 'overworked',
+          'workout', 'exercise', 'gym', 'training', 'overuse', 'overworked',
           'strain', 'pulled muscle', 'torn muscle', 'injury', 'sports injury',
-          'repetitive', 'repetition', 'same motion', 'typing', 'comp uter',
+          'repetitive', 'repetition', 'same motion', 'typing', 'computer',
           'poor posture', 'posture issue', 'desk job', 'sitting all day',
           'heavy lift', 'lifting heavy', 'manual labor', 'physical work',
-          'dehydration', 'electrolyte ', 'magnesium', 'potassium', 'mineral',
+          'dehydration', 'electrolyte', 'magnesium', 'potassium', 'mineral',
           'stress tension', 'emotional tension', 'hold tension', 'carry stress',
-          'stretch', 'stretching', 'massage', 'foam roll', 'heat',  'ice',
+          'stretch', 'stretching', 'massage', 'foam roll', 'heat', 'ice',
           'rest', 'recovery', 'active recovery', 'physical therapy', 'chiropractic'
         ]
       },
       'digestion': {
         weight: 0,
         keywords: [
-          'digest', 'digestion', 'dige stive', 'digestive issue', 'digestive problem',
+          'digest', 'digestion', 'digestive', 'digestive issue', 'digestive problem',
           'gut', 'gut health', 'gut issue', 'stomach', 'stomach issue', 'stomach problem',
-          'gi', 'gastrointestinal', 'gi tract', ' bowel', 'bowel movement', 'bm',
+          'gi', 'gastrointestinal', 'gi tract', 'bowel', 'bowel movement', 'bm',
           'bloat', 'bloating', 'bloated', 'distended', 'gas', 'gassy', 'flatulence',
-          'burp', 'burping', 'belch', 'belching', 'heartburn', 'acid re flux', 'gerd',
+          'burp', 'burping', 'belch', 'belching', 'heartburn', 'acid reflux', 'gerd',
           'constipation', 'constipated', 'irregular', 'infrequent', 'hard stool',
           'diarrhea', 'loose stool', 'frequent bm', 'urgent', 'incontinence',
-          'ibs',  'irritable bowel', 'ibd', 'crohn\'s', 'colitis', 'ulcerative',
+          'ibs', 'irritable bowel', 'ibd', 'crohn\'s', 'colitis', 'ulcerative',
           'sibo', 'small intestine', 'bacterial overgrowth', 'candida', 'yeast',
-          'nausea', 'nauseous', 'queasy', 'u pset stomach', 'stomach ache',
+          'nausea', 'nauseous', 'queasy', 'upset stomach', 'stomach ache',
           'vomiting', 'throw up', 'indigestion', 'dyspepsia', 'discomfort',
           'full', 'too full', 'early satiety', 'can\'t finish', 'heavy meal',
-           'slow digestion', 'slow transit', 'food sit', 'sit like brick',
+          'slow digestion', 'slow transit', 'food sit', 'sit like brick',
           'food sensitivity', 'food intolerance', 'trigger food', 'react to food',
-          'gluten', 'dairy', 'lactose' , 'fructose', 'fodmap', 'histamine',
+          'gluten', 'dairy', 'lactose', 'fructose', 'fodmap', 'histamine',
           'spicy food', 'fatty food', 'greasy', 'fried food', 'alcohol',
           'eat fast', 'eating fast', 'not chew', 'swallow air', 'carbonated',
-           'abdominal pain', 'belly pain', 'cramping', 'cramps', 'stomach cramp',
+          'abdominal pain', 'belly pain', 'cramping', 'cramps', 'stomach cramp',
           'rumbling', 'gurgling', 'borborygmi', 'stomach noise',
-          'weight loss', 'unintended weight',  'malabsorption', 'nutrient deficiency',
+          'weight loss', 'unintended weight', 'malabsorption', 'nutrient deficiency',
           'probiotic', 'prebiotic', 'gut flora', 'microbiome', 'gut bacteria'
         ]
       },
       'shoulder': {
         weight: 0,
         keywords: [
-          's houlder', 'shoulders', 'shoulder pain', 'shoulder ache', 'aching shoulder',
+          'shoulder', 'shoulders', 'shoulder pain', 'shoulder ache', 'aching shoulder',
           'left shoulder', 'right shoulder', 'both shoulders', 'shoulder blade',
-          'scapula', 'scapular' , 'upper back', 'between shoulder', 'shoulder blade pain',
+          'scapula', 'scapular', 'upper back', 'between shoulder', 'shoulder blade pain',
           'frozen shoulder', 'adhesive capsulitis', 'rotator cuff', 'rotator cuff tear',
-          'impingement', 'shoulder impin gement', 'bursitis', 'tendonitis', 'tendinitis',
+          'impingement', 'shoulder impingement', 'bursitis', 'tendonitis', 'tendinitis',
           'labral tear', 'slap tear', 'shoulder instability', 'dislocation', 'subluxation',
-          'arthritis shoulder', 'bone Spur', 'c alcification', 'calcific tendonitis',
+          'arthritis shoulder', 'bone spur', 'calcification', 'calcific tendonitis',
           'reach overhead', 'can\'t reach', 'limited reach', 'above head',
-          'reach behind', 'back pocket', 'bra clasp', 'seatbelt', 'zipper', 
+          'reach behind', 'back pocket', 'bra clasp', 'seatbelt', 'zipper',
           'reach across', 'opposite shoulder', 'cross body',
           'night pain', 'can\'t sleep shoulder', 'lie on shoulder', 'pressure pain',
-          'stiff shoulder', 'shoulder stiffne ss', 'frozen', 'locked', 'can\'t move',
+          'stiff shoulder', 'shoulder stiffness', 'frozen', 'locked', 'can\'t move',
           'weakness', 'weak shoulder', 'drop thing', 'can\'t lift', 'lifting pain',
-          'overhead work', 'painting', 'throwing', 'pitching', ' swimming',
+          'overhead work', 'painting', 'throwing', 'pitching', 'swimming',
           'tennis', 'golf', 'volleyball', 'baseball', 'repetitive overhead',
           'desk job', 'computer', 'typing', 'mouse', 'poor posture', 'rounded shoulder',
-          'forw ard head', 'text neck', 'hunch', 'slouch', 'kyphosis',
+          'forward head', 'text neck', 'hunch', 'slouch', 'kyphosis',
           'injury', 'fall', 'accident', 'trauma', 'whiplash', 'sports injury',
-          'post surgery', 'post op', 'after surgery',  'recovery', 'rehabilitation'
+          'post surgery', 'post op', 'after surgery', 'recovery', 'rehabilitation'
         ]
       },
       'glucose': {
         weight: 0,
         keywords: [
           'glucose', 'blood sugar', 'sugar level', 'glucose level', 'glucose monitoring',
-          'd iabetes', 'diabetic', 'type 1', 'type 2', 'type 1 diabetes', 'type 2 diabetes',
+          'diabetes', 'diabetic', 'type 1', 'type 2', 'type 1 diabetes', 'type 2 diabetes',
           'prediabetes', 'pre-diabetes', 'borderline diabetic', 'insulin resistance',
-          'metabolic s yndrome', 'metabolic disorder', 'insulin', 'insulin dependent',
+          'metabolic syndrome', 'metabolic disorder', 'insulin', 'insulin dependent',
           'high sugar', 'hyperglycemia', 'low sugar', 'hypoglycemia', 'blood sugar spike',
-          'sugar crash', 'crash a fter eating', 'reactive hypoglycemia', 'roller coaster',
+          'sugar crash', 'crash after eating', 'reactive hypoglycemia', 'roller coaster',
           'fasting glucose', 'postprandial', 'after meal', 'morning number', 'a1c', 'hba1c',
-          'glucose monitor', 'cgm', 'c ontinuous monitor', 'finger stick', 'test strip',
+          'glucose monitor', 'cgm', 'continuous monitor', 'finger stick', 'test strip',
           'thirsty', 'excessive thirst', 'polydipsia', 'frequent urination', 'polyuria',
-          'hungry', 'excessive hunger', 'polyphag ia', 'always hungry', 'craving sugar',
+          'hungry', 'excessive hunger', 'polyphagia', 'always hungry', 'craving sugar',
           'blurry vision', 'vision change', 'tunnel vision', 'floaters',
-          'tingling', 'numbness', 'neuropathy', 'nerve damage', 'pins and ne edles',
+          'tingling', 'numbness', 'neuropathy', 'nerve damage', 'pins and needles',
           'slow healing', 'slow wound', 'cut healing', 'infection prone',
           'fatigue', 'tired', 'exhausted', 'energy crash', 'afternoon crash',
-          'weight gain', 'weight  loss', 'unexplained weight', 'belly fat', 'visceral fat',
+          'weight gain', 'weight loss', 'unexplained weight', 'belly fat', 'visceral fat',
           'carb count', 'carbohydrate', 'low carb', 'keto', 'ketogenic',
-          'medication', 'metformin', 'insulin injection' , 'glucose tab', 'glucagon',
+          'medication', 'metformin', 'insulin injection', 'glucose tab', 'glucagon',
           'diet control', 'exercise', 'walking after meal', 'lifestyle change',
-          'complication', 'retinopathy', 'nephropathy', 'cardiovascular', 'hear t disease',
+          'complication', 'retinopathy', 'nephropathy', 'cardiovascular', 'heart disease',
           'circulation', 'poor circulation', 'blood flow', 'peripheral artery', 'pad'
         ]
       },
       'metabolism': {
         weight: 0,
         keywords: [
-          'metabolism', 'metab olic', 'slow metabolism', 'fast metabolism', 'metabolism boost',
+          'metabolism', 'metabolic', 'slow metabolism', 'fast metabolism', 'metabolism boost',
           'metabolic rate', 'bmr', 'basal metabolic', 'calorie burn', 'burn calories',
-          'thyroid', 'thyroid issue' , 'hypothyroid', 'hyperthyroid', 'underactive thyroid',
+          'thyroid', 'thyroid issue', 'hypothyroid', 'hyperthyroid', 'underactive thyroid',
           'overactive thyroid', 'thyroid hormone', 'tsh', 't3', 't4', 'hashimoto', 'graves',
-          'weight gain', 'gain weight',  'can\'t lose', 'can\'t lose weight', 'weight loss',
+          'weight gain', 'gain weight', 'can\'t lose', 'can\'t lose weight', 'weight loss',
           'lose weight', 'stubborn weight', 'plateau', 'weight plateau', 'hard to lose',
-          'easy gain', 'gain easily', 'yo-yo',  'yo-yo diet', 'rebound weight',
+          'easy gain', 'gain easily', 'yo-yo', 'yo-yo diet', 'rebound weight',
           'belly fat', 'abdominal fat', 'visceral fat', 'middle weight', 'middle age spread',
-          'body composition', 'muscle mass', 'lean mass', 'bo dy fat percentage',
+          'body composition', 'muscle mass', 'lean mass', 'body fat percentage',
           'low energy', 'fatigue', 'tired', 'exhausted', 'drained', 'depleted',
           'energy crash', 'afternoon slump', '3pm crash', 'need nap', 'always tired',
-           'cold', 'cold hands', 'cold feet', 'temperature sensitive', 'can\'t get warm',
+          'cold', 'cold hands', 'cold feet', 'temperature sensitive', 'can\'t get warm',
           'hot', 'overheated', 'heat intolerant', 'sweat excessive', 'night sweat',
-          'slow diges tion', 'constipation', 'irregular bowel', 'bloating after eating',
+          'slow digestion', 'constipation', 'irregular bowel', 'bloating after eating',
           'food sit', 'heavy after meal', 'slow transit', 'motility issue',
-          'appetite change', 'increased appet ite', 'decreased appetite', 'craving',
+          'appetite change', 'increased appetite', 'decreased appetite', 'craving',
           'cortisol', 'stress hormone', 'adrenal', 'adrenal fatigue', 'hpa axis',
-          'leptin', 'ghrelin', 'hunger hormone', 'satiety', 'fullne ss signal',
+          'leptin', 'ghrelin', 'hunger hormone', 'satiety', 'fullness signal',
           'pcos', 'polycystic ovary', 'ovarian cyst', 'hormone imbalance', 'insulin resistance',
-          'menopause metabolism', 'age related', 'slowing down', 'getting older ',
+          'menopause metabolism', 'age related', 'slowing down', 'getting older',
           'sedentary', 'inactive', 'desk job', 'sit all day', 'little exercise',
           'muscle loss', 'sarcopenia', 'aging muscle', 'strength training', 'build muscle',
-          'diet' , 'calorie restriction', 'intermittent fasting', 'eating window',
+          'diet', 'calorie restriction', 'intermittent fasting', 'eating window',
           'supplement', 'metabolism booster', 'fat burner', 'thermogenic', 'green tea'
         ]
       },
       'lupus': {
-        wei ght: 0,
+        weight: 0,
         keywords: [
           'lupus', 'sle', 'systemic lupus', 'lupus erythematosus', 'autoimmune lupus',
-          'lupus flare', 'flare up', 'flare-up', 'lupus symptoms', 'living wi th lupus',
+          'lupus flare', 'flare up', 'flare-up', 'lupus symptoms', 'living with lupus',
           'autoimmune', 'autoimmune disease', 'autoimmune disorder', 'immune system',
           'overactive immune', 'immune attack', 'self attack', 'chronic autoimmune',
-           'inflammatory', 'inflammation', 'systemic inflammation', 'chronic inflammation',
+          'inflammatory', 'inflammation', 'systemic inflammation', 'chronic inflammation',
           'butterfly rash', 'malar rash', 'face rash', 'sun sensitivity', 'photosensitive',
-          'sun  exposure', 'sun reaction', 'uv sensitive', 'rash after sun',
+          'sun exposure', 'sun reaction', 'uv sensitive', 'rash after sun',
           'joint pain', 'joint swelling', 'arthritis lupus', 'morning stiffness',
-          'fatigue', 'extreme fatigue', 'lupu s fatigue', 'crushing tired', 'exhausted',
+          'fatigue', 'extreme fatigue', 'lupus fatigue', 'crushing tired', 'exhausted',
           'fever', 'low grade fever', 'unexplained fever', 'temperature',
-          'kidney', 'nephritis', 'lupus nephritis', 'protein urine', 'k idney issue',
+          'kidney', 'nephritis', 'lupus nephritis', 'protein urine', 'kidney issue',
           'chest pain', 'pleurisy', 'pleuritis', 'lung inflammation', 'short breath',
           'raynaud', 'raynaud\'s', 'cold fingers', 'cold toes', 'color change fingers',
-           'mouth sore', 'mouth ulcer', 'nasal ulcer', 'canker sore',
+          'mouth sore', 'mouth ulcer', 'nasal ulcer', 'canker sore',
           'hair loss', 'alopecia', 'thinning hair', 'patchy hair', 'lupus hair',
-          'brain fog', 'cognitive', 'memor y issue', 'concentration', 'lupus fog',
+          'brain fog', 'cognitive', 'memory issue', 'concentration', 'lupus fog',
           'headache', 'migraine', 'seizure', 'neurological', 'nervous system',
-          'anemia', 'low blood count', 'white blood cell', 'platelet' , 'blood disorder',
+          'anemia', 'low blood count', 'white blood cell', 'platelet', 'blood disorder',
           'hydroxychloroquine', 'plaquenil', 'prednisone', 'steroid', 'immunosuppressant',
           'biologic', 'benlysta', 'cellcept', 'methotrexate', 'medication',
-           'rheumatologist', 'autoimmune specialist', 'regular monitoring', 'blood work',
+          'rheumatologist', 'autoimmune specialist', 'regular monitoring', 'blood work',
           'trigger avoidance', 'stress management', 'rest', 'pacing', 'spoon theory',
-          'invisib le illness', 'chronic illness', 'chronic pain', 'chronic fatigue',
+          'invisible illness', 'chronic illness', 'chronic pain', 'chronic fatigue',
           'support group', 'lupus warrior', 'lupus strong', 'butterfly community'
         ]
       },
       'opioid': {
-        weight : 0,
+        weight: 0,
         keywords: [
           'opioid', 'opioids', 'opiate', 'opiates', 'narcotic', 'narcotics',
           'recovery', 'recovering', 'recovery journey', 'in recovery', 'sobriety',
-          ' sober', 'getting sober', 'stay sober', 'relapse', 'relapse prevention',
+          'sober', 'getting sober', 'stay sober', 'relapse', 'relapse prevention',
           'addiction', 'addicted', 'addiction recovery', 'substance abuse', 'substance use',
-          'dependence',  'dependent', 'physical dependence', 'chemical dependence',
+          'dependence', 'dependent', 'physical dependence', 'chemical dependence',
           'withdrawal', 'withdraw', 'detox', 'detoxing', 'withdrawal symptom',
-          'cold turkey', 'coming off', 'tapering' , 'taper off', 'wean off',
+          'cold turkey', 'coming off', 'tapering', 'taper off', 'wean off',
           'muscle ache', 'bone pain', 'deep pain', 'restless leg', 'rls', 'leg jitter',
-          'nausea', 'vomiting', 'diarrhea', 'stomach cramp', 'abdominal c ramp',
+          'nausea', 'vomiting', 'diarrhea', 'stomach cramp', 'abdominal cramp',
           'sweat', 'sweating', 'cold sweat', 'chills', 'goosebumps', 'flu-like',
           'anxiety', 'panic', 'agitation', 'irritability', 'mood swing', 'depression',
-          'insomn ia', 'can\'t sleep', 'restless', 'toss and turn', 'yawning',
+          'insomnia', 'can\'t sleep', 'restless', 'toss and turn', 'yawning',
           'runny nose', 'watery eye', 'dilated pupil', 'sensitive to light',
-          'craving', 'urge', 'trigger', 'drug seek ing', 'obsession',
+          'craving', 'urge', 'trigger', 'drug seeking', 'obsession',
           'pain management', 'chronic pain', 'pain relief', 'alternative pain',
           'non opioid', 'opioid free', 'natural pain', 'holistic pain',
-          'nerve pain ', 'neuropathy', 'back pain', 'surgery recovery', 'injury pain',
+          'nerve pain', 'neuropathy', 'back pain', 'surgery recovery', 'injury pain',
           'physical therapy', 'massage', 'acupuncture', 'meditation', 'mindfulness',
-          'mat', 'medication assisted' , 'suboxone', 'methadone', 'vivitrol', 'naloxone',
+          'mat', 'medication assisted', 'suboxone', 'methadone', 'vivitrol', 'naloxone',
           'narcan', 'overdose prevention', 'harm reduction', 'needle exchange',
-          'counseling', 'therapy', 'support group', 'na',  'narcotics anonymous',
+          'counseling', 'therapy', 'support group', 'na', 'narcotics anonymous',
           '12 step', 'sponsor', 'meeting', 'rehab', 'rehabilitation', 'treatment center',
-          'family support', 'loved one', 'enabling', 'codependent', 'bound ary',
+          'family support', 'loved one', 'enabling', 'codependent', 'boundary',
           'stigma', 'judgment', 'shame', 'guilt', 'self compassion', 'forgiveness',
           'wellness', 'holistic', 'mind body', 'healing journey', 'new life', 'second chance'
-         ]
+        ]
       },
       'blood-type-a': {
         weight: 0,
         keywords: [
           'blood type', 'bloodtype', 'type a', 'type a positive', 'type a negative',
-          'a positive', 'a negative', 'blood  type diet', 'eat right 4 your type',
+          'a positive', 'a negative', 'blood type diet', 'eat right 4 your type',
           'dadamo', 'peter dadamo', 'blood type nutrition', 'genotype diet',
-          'sensitive', 'sensitive digestion', 'sensitive stomach', 'delica te digestion',
+          'sensitive', 'sensitive digestion', 'sensitive stomach', 'delicate digestion',
           'vegetarian', 'plant based', 'plant diet', 'meat sensitive', 'red meat issue',
-          'low stomach acid', 'hypochlorhydria', 'digestive enzyme', 'enzyme deficie nt',
+          'low stomach acid', 'hypochlorhydria', 'digestive enzyme', 'enzyme deficient',
           'stress sensitive', 'high cortisol', 'adrenal issue', 'calming needed',
           'type a personality', 'perfectionist', 'type a trait', 'driven', 'ambitious',
-          'heart  disease', 'cardiovascular', 'heart health', 'cholesterol', 'high cholesterol',
+          'heart disease', 'cardiovascular', 'heart health', 'cholesterol', 'high cholesterol',
           'cancer prevention', 'cancer risk', 'immune support', 'low immune', 'infection prone',
-          'd iabetes risk', 'insulin resistance', 'metabolic issue', 'weight gain',
+          'diabetes risk', 'insulin resistance', 'metabolic issue', 'weight gain',
           'thyroid', 'slow thyroid', 'thyroid support', 'metabolism slow',
-          'bone health', 'osteoporosis', ' bo ne density', 'calcium',
+          'bone health', 'osteoporosis', 'bone density', 'calcium',
           'avoid meat', 'limit meat', 'no red meat', 'fish okay', 'poultry okay',
           'dairy sensitive', 'limit dairy', 'no dairy', 'lactose issue',
-          ' wheat issue', 'gluten sensitive', 'lectin', 'lectin sensitive',
+          'wheat issue', 'gluten sensitive', 'lectin', 'lectin sensitive',
           'alkaline', 'alkaline diet', 'acidic', 'balance ph', 'ph balance',
-          'small meal', 'frequent meal', 'grazi ng', 'large meal hard', 'heavy meal',
+          'small meal', 'frequent meal', 'grazing', 'large meal hard', 'heavy meal',
           'calming food', 'soothing food', 'gentle food', 'easy digest',
-          'calming exercise', 'yoga', 'tai chi', 'qigong', 'meditation', 'gen tle movement',
+          'calming exercise', 'yoga', 'tai chi', 'qigong', 'meditation', 'gentle movement',
           'intense exercise', 'overdo exercise', 'too much cardio', 'cortisol spike',
           'routine', 'structured', 'schedule', 'regular meal', 'regular sleep',
-          ' nature', 'outdoor', 'peaceful', 'quiet', 'low stress environment'
+          'nature', 'outdoor', 'peaceful', 'quiet', 'low stress environment'
         ]
       },
       'telomere': {
         weight: 0,
         keywords: [
-          'telomere', 'telomeres', 'telomere length', 'telom ere shortening', 'telomerase',
+          'telomere', 'telomeres', 'telomere length', 'telomere shortening', 'telomerase',
           'anti-aging', 'anti aging', 'age reversal', 'reverse aging', 'slow aging',
-          'longevity', 'long life', 'life extension', 'healthy aging', ' graceful aging',
+          'longevity', 'long life', 'life extension', 'healthy aging', 'graceful aging',
           'cellular aging', 'cell aging', 'biological age', 'chronological age',
           'cell', 'cells', 'cellular health', 'cell repair', 'cell regeneration',
-          'd na', 'dna damage', 'dna repair', 'genetic', 'genome', 'epigenetic',
+          'dna', 'dna damage', 'dna repair', 'genetic', 'genome', 'epigenetic',
           'mitochondria', 'mitochondrial', 'energy production', 'cellular energy',
-          'oxidative stress', 'free r adical', 'antioxidant', 'ros', 'reactive oxygen',
+          'oxidative stress', 'free radical', 'antioxidant', 'ros', 'reactive oxygen',
           'inflammation', 'chronic inflammation', 'inflammatory', 'anti-inflammatory',
-          'wrinkle', 'wrinkles', 'fine line', 'agin g skin', 'skin aging', 'elasticity',
+          'wrinkle', 'wrinkles', 'fine line', 'aging skin', 'skin aging', 'elasticity',
           'sagging', 'loose skin', 'age spot', 'sun damage', 'photoaging',
-          'gray hair', 'grey hair', 'hair loss', 'thinning hair', 'hair agin g',
+          'gray hair', 'grey hair', 'hair loss', 'thinning hair', 'hair aging',
           'energy decline', 'lower energy', 'fatigue', 'slower recovery',
           'memory', 'cognitive decline', 'brain fog', 'mental sharpness', 'focus',
-          'muscle loss', 'sarco penia', 'strength loss', 'frail', 'frailty',
+          'muscle loss', 'sarcopenia', 'strength loss', 'frail', 'frailty',
           'bone loss', 'bone density', 'osteoporosis', 'joint stiffness',
-          'stress management', 'chronic stress', 'cortisol', 'adrenal ', 'hpa axis',
+          'stress management', 'chronic stress', 'cortisol', 'adrenal', 'hpa axis',
           'sleep quality', 'deep sleep', 'sleep duration', 'circadian', 'melatonin',
           'exercise', 'physical activity', 'strength training', 'cardio', 'movement',
-           'diet', 'nutrition', 'calorie restriction', 'intermittent fasting', 'fasting',
+          'diet', 'nutrition', 'calorie restriction', 'intermittent fasting', 'fasting',
           'supplement', 'nmn', 'nr', 'resveratrol', 'metformin', 'rapamycin',
-          'meditation', 'mi ndfulness', 'breathwork', 'relaxation', 'stress reduction',
+          'meditation', 'mindfulness', 'breathwork', 'relaxation', 'stress reduction',
           'social connection', 'community', 'purpose', 'ikigai', 'meaning',
-          'environment', 'toxin', 'pollution', 'clea n living', 'organic', 'natural'
+          'environment', 'toxin', 'pollution', 'clean living', 'organic', 'natural'
         ]
       },
       'unbroken': {
         weight: 0,
         keywords: [
           'unbroken', 'unbroken spirit', 'chronic illness', 'chronic disease',
-          'invisibl e illness', 'hidden illness', 'unseen illness', 'spoonie', 'spoon theory',
+          'invisible illness', 'hidden illness', 'unseen illness', 'spoonie', 'spoon theory',
           'flare', 'flare up', 'flare-up', 'symptom flare', 'bad day', 'crash',
-          'chronic pain', 'chroni c fatigue', 'chronic symptom', 'lifelong condition',
+          'chronic pain', 'chronic fatigue', 'chronic symptom', 'lifelong condition',
           'autoimmune', 'autoimmune disease', 'immune disorder', 'immune system',
-          'fibromyalgia', 'fms', 'fibro', 'myalgic',  'encephalomyelitis', 'me',
+          'fibromyalgia', 'fms', 'fibro', 'myalgic', 'encephalomyelitis', 'me',
           'mecfs', 'chronic fatigue syndrome', 'post viral', 'long covid', 'long-haul',
-          'pots', 'dysautonomia', 'autonomic', 'orthostatic', 'heart rate ', 'blood pressure',
+          'pots', 'dysautonomia', 'autonomic', 'orthostatic', 'heart rate', 'blood pressure',
           'ehlers danlos', 'eds', 'hypermobile', 'joint hypermobility', 'connective tissue',
-          'mast cell', 'mcast', 'histamine', 'mcas', 'allergic', 'sensitiv ity',
+          'mast cell', 'mcast', 'histamine', 'mcas', 'allergic', 'sensitivity',
           'pain', 'body pain', 'widespread pain', 'all over pain', 'aching', 'sore',
           'fatigue', 'exhaustion', 'extreme fatigue', 'crushing tired', 'wired tired',
-          'bra in fog', 'cognitive', 'memory', 'concentration', 'mental fog', 'confusion',
+          'brain fog', 'cognitive', 'memory', 'concentration', 'mental fog', 'confusion',
           'sleep issue', 'unrefreshing', 'non-restorative', 'wake tired', 'insomnia',
-          'sensitive', 'se nsitivity', 'light sensitive', 'sound sensitive', 'chemical sensitive',
+          'sensitive', 'sensitivity', 'light sensitive', 'sound sensitive', 'chemical sensitive',
           'overwhelm', 'overstimulated', 'sensory overload', 'too much', 'can\'t handle',
-          'grief', 'loss',  'mourning', 'identity loss', 'old self', 'who i was',
+          'grief', 'loss', 'mourning', 'identity loss', 'old self', 'who i was',
           'isolation', 'alone', 'lonely', 'misunderstood', 'not believed', 'dismissed',
-          'resilience', 'resilient', 'strengt h', 'strong', 'fighter', 'warrior',
+          'resilience', 'resilient', 'strength', 'strong', 'fighter', 'warrior',
           'healing', 'heal', 'healing journey', 'recovery', 'get better', 'improve',
-          'acceptance', 'radical acceptance', 'new normal', 'adapt' , 'adjustment',
+          'acceptance', 'radical acceptance', 'new normal', 'adapt', 'adjustment',
           'self compassion', 'self care', 'gentle', 'kindness', 'patience',
           'support', 'community', 'tribe', 'understood', 'seen', 'heard', 'validated',
-          'ho pe', 'hopeful', 'possibility', 'better day', 'good day', 'window',
+          'hope', 'hopeful', 'possibility', 'better day', 'good day', 'window',
           'advocacy', 'awareness', 'visibility', 'speak up', 'share story', 'help others',
-          'purpose', 'meaning' , 'why', 'reason', 'gift', 'lesson', 'growth', 'transformation'
+          'purpose', 'meaning', 'why', 'reason', 'gift', 'lesson', 'growth', 'transformation'
         ]
       },
       'queen': {
         weight: 0,
         keywords: [
-          'queen', 'queen energy', 'empress', 'goddess', 'divine  feminine', 'feminine',
+          'queen', 'queen energy', 'empress', 'goddess', 'divine feminine', 'feminine',
           'self-love', 'love myself', 'self worth', 'self value', 'self esteem',
-          'confidence', 'confident', 'empowerment', 'empowered', 'powerful', 'power' ,
+          'confidence', 'confident', 'empowerment', 'empowered', 'powerful', 'power',
           'inner strength', 'inner beauty', 'inner goddess', 'radiate', 'glow',
           'worthy', 'deserving', 'enough', 'i am enough', 'self acceptance',
-          'heal', 'healing', 'emo tional healing', 'heart healing', 'past hurt',
+          'heal', 'healing', 'emotional healing', 'heart healing', 'past hurt',
           'trauma', 'heal trauma', 'wound', 'emotional wound', 'old pain',
-          'forgive', 'forgiveness', 'let go', 'release', 'free', ' freedom',
+          'forgive', 'forgiveness', 'let go', 'release', 'free', 'freedom',
           'boundary', 'boundaries', 'say no', 'protect energy', 'energy vampire',
           'self care', 'nurturing', 'nurture', 'tend', 'gentle', 'kind',
-          'relationship', ' partnership', 'love', 'romantic', 'attraction', 'magnetic',
+          'relationship', 'partnership', 'love', 'romantic', 'attraction', 'magnetic',
           'communication', 'express', 'voice', 'speak truth', 'authentic', 'real',
-          'mother', 'motherhood', 'nurturing' , 'caregiver', 'giving', 'receiving',
+          'mother', 'motherhood', 'nurturing', 'caregiver', 'giving', 'receiving',
           'sister', 'sisterhood', 'community', 'tribe', 'circle', 'support',
-          'abundance', 'prosperity', 'manifest', 'attract', 'deserve good ',
+          'abundance', 'prosperity', 'manifest', 'attract', 'deserve good',
           'sacred', 'sacred feminine', 'divine', 'spiritual', 'soul', 'spirit',
           'energy', 'vibration', 'frequency', 'align', 'alignment', 'flow',
-          'intuition', 'intuitive ', 'inner wisdom', 'inner voice', 'trust',
+          'intuition', 'intuitive', 'inner wisdom', 'inner voice', 'trust',
           'ritual', 'ceremony', 'sacred space', 'altar', 'meditation', 'prayer',
-          'rose', 'flower', 'bloom', 'blossom', 'petal', 'fragra nt', 'beautiful',
+          'rose', 'flower', 'bloom', 'blossom', 'petal', 'fragrant', 'beautiful',
           'luxury', 'indulge', 'pamper', 'treat', 'special', 'precious', 'treasure'
         ]
       },
       'king': {
         weight: 0,
         keywords: [
-          'king', 'king energy',  'emperor', 'divine masculine', 'masculine',
+          'king', 'king energy', 'emperor', 'divine masculine', 'masculine',
           'leader', 'leadership', 'lead', 'command', 'authority', 'power',
-          'strength', 'strong', 'inner strength', 'core strength', ' solid', 'grounded',
+          'strength', 'strong', 'inner strength', 'core strength', 'solid', 'grounded',
           'confidence', 'confident', 'self-assured', 'certain', 'decisive', 'decide',
-          'purpose', 'mission', 'vision', 'direction', 'path', 'calling', 'destiny ',
+          'purpose', 'mission', 'vision', 'direction', 'path', 'calling', 'destiny',
           'legacy', 'impact', 'influence', 'make mark', 'contribution', 'significance',
           'clarity', 'clear', 'mental clarity', 'focus', 'concentration', 'sharp',
-          'discipl ine', 'disciplined', 'commitment', 'dedication', 'persistence',
+          'discipline', 'disciplined', 'commitment', 'dedication', 'persistence',
           'courage', 'brave', 'fearless', 'bold', 'warrior', 'fighter',
-          'honor', 'integrity', 'truth', 'honest', ' authentic', 'real', 'genuine',
+          'honor', 'integrity', 'truth', 'honest', 'authentic', 'real', 'genuine',
           'wisdom', 'wise', 'knowledge', 'understanding', 'insight', 'discernment',
-          'calm', 'composed', 'steady', 'stable', 'unshakeable', 'centere d',
+          'calm', 'composed', 'steady', 'stable', 'unshakeable', 'centered',
           'protect', 'protection', 'protector', 'provide', 'provider', 'support',
           'father', 'fatherhood', 'paternal', 'guide', 'mentor', 'teach',
-          'partner', 'partnershi p', 'brother', 'brotherhood', 'ally', 'team',
+          'partner', 'partnership', 'brother', 'brotherhood', 'ally', 'team',
           'respect', 'respected', 'earn respect', 'command respect', 'dignity',
-          'abundance', 'prosperity', 'success', 'achievement',  'accomplishment',
+          'abundance', 'prosperity', 'success', 'achievement', 'accomplishment',
           'crown', 'crown chakra', 'third eye', 'solar plexus', 'root chakra',
           'energy', 'vitality', 'vigor', 'life force', 'chi', 'prana',
-          'ground', 'gr ounding', 'earth', 'stable', 'rooted', 'foundation',
+          'ground', 'grounding', 'earth', 'stable', 'rooted', 'foundation',
           'cedar', 'pine', 'wood', 'forest', 'mountain', 'stone', 'earth',
-          'ritual', 'ceremony', 'sacred', 'spiritual', 'soul ', 'spirit',
+          'ritual', 'ceremony', 'sacred', 'spiritual', 'soul', 'spirit',
           'sovereign', 'sovereignty', 'rule', 'reign', 'throne', 'kingdom', 'domain'
         ]
       }
     };
-    
+
     // ✅ Weighted scoring algorithm
     let bestMatch = null;
-    let bestScore = 0; 
+    let bestScore = 0;
 
     for (const [condition, data] of Object.entries(conditionMap)) {
       let score = 0;
@@ -533,7 +527,7 @@ export default function BlendPage() {
       for (const keyword of data.keywords) {
         if (lowerInput.includes(keyword)) {
           score += keyword.split(' ').length > 1 ? 3 : 1;
-          if (data.keywords.indexOf(keyword)  < 5) {
+          if (data.keywords.indexOf(keyword) < 5) {
             score += 2;
           }
         }
@@ -575,7 +569,7 @@ export default function BlendPage() {
   useEffect(() => {
     if (typeof window === 'undefined' || !product) return;
     if (document.getElementById('paypal-sdk')) return;
-
+    
     const script = document.createElement('script');
     script.id = 'paypal-sdk';
     script.src = 'https://www.paypal.com/sdk/js?client-id=ATmYVsWxvBzV6cJgPrC_AvCmCi9WfjP3u4Mv8uyME_mvlw0zBKQ06-BNylvCY_IOMoBuQFyPvdLM1xZ6&currency=USD';
@@ -634,7 +628,7 @@ export default function BlendPage() {
     };
   }, [product, generatedBlend]);
 
-  // ✅✅✅ UPDATED: Generate Custom Blend with PREVIEW + UNLOCK Flow
+  // ✅ Generate Custom Blend with PREVIEW + UNLOCK Flow
   const handleGenerateBlend = async () => {
     if (!userInput.trim()) {
       setGenerationError('Please describe your wellness needs first.');
@@ -648,17 +642,15 @@ export default function BlendPage() {
     setUnlockOptions(null);
 
     try {
-      // ✅ Detect condition from user input using extensive keyword mapping
       const detectedCondition = detectCondition(userInput);
-      // ✅ Determine if we should use AI (long input with no clear match) or rule-based
       const useAI = userInput.length > 50 && !detectedCondition;
       
-      // ✅ STEP 1: Request PREVIEW first (no auth required)
+      // ✅ STEP 1: Request PREVIEW first
       const response = await fetch('/api/generate-blend', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'x-preview': 'true' // ✅ Request preview mode
+          'x-preview': 'true'
         },
         body: JSON.stringify({
           condition: detectedCondition,
@@ -670,7 +662,6 @@ export default function BlendPage() {
       });
 
       const data = await response.json();
-      
       console.log('🧪 Preview Response:', data);
 
       // ✅ STEP 2: Handle preview response (402 Payment Required or 200 with preview)
@@ -681,7 +672,7 @@ export default function BlendPage() {
           price: data.preview?.price || data.blend?.price || 58,
           xec: data.preview?.xec || data.blend?.xec || 103,
           slug: data.preview?.slug || data.blend?.slug || 'preview-blend',
-          preview: true, // ✅ Mark as preview
+          preview: true,
           recipe: [],
           instructions: null
         });
@@ -701,7 +692,7 @@ export default function BlendPage() {
         
         setShowUnlockButton(true);
         setGenerationError(null);
-        return; // ✅ Stop here - user must unlock to see full recipe
+        return;
       }
 
       if (!response.ok) {
@@ -716,8 +707,9 @@ export default function BlendPage() {
         throw new Error('Blend response missing required fields');
       }
 
-      setGeneratedBlend({ ...blendData });
+      setGeneratedBlend({ ...blendData, preview: false });
       setProduct({ ...blendData });
+      setShowUnlockButton(false);
       
     } catch (error) {
       console.error('❌ Blend generation error:', error);
@@ -727,7 +719,7 @@ export default function BlendPage() {
     }
   };
 
-  // ✅✅✅ FIXED: Handle Unlock After Preview (with proper Xamm auth)
+  // ✅ Handle Unlock After Preview (Modern Auth - Removed .off() calls)
   const handleUnlockBlend = async (paymentMethod) => {
     if (!generatedBlend?.slug) {
       setGenerationError('No blend to unlock. Please generate a blend first.');
@@ -754,7 +746,7 @@ export default function BlendPage() {
         
         // ✅ Validate API key first
         if (!XUMM_API_KEY || XUMM_API_KEY === 'your-api-key-here' || XUMM_API_KEY.length < 10) {
-          throw new Error('❌ Configuration Error:\n\nYour Xumm Wallet API key is not properly configured.\n\nPlease check Vercel environment variables → NEXT_PUBLIC_XUMM_API_KEY');
+          throw new Error('❌ Configuration Error:\n\nYour Xumm Wallet API key is not configured.\n\nCheck Vercel → NEXT_PUBLIC_XUMM_API_KEY');
         }
         
         const xumm = new window.Xumm(XUMM_API_KEY);
@@ -762,7 +754,7 @@ export default function BlendPage() {
 
         console.log('🔐 Requesting Xumm authorization...');
         
-        // ✅ STEP 1: Authorize Connection (Modern Promise Pattern - Removed .off() calls)
+        // ✅ STEP 1: Authorize Connection (Modern Promise Pattern)
         let xrplAddress;
         try {
           const result = await xumm.authorize();
@@ -770,10 +762,7 @@ export default function BlendPage() {
           console.log('✅ Authorization result:', result);
           
           if (!result || !result.account || !result.account.address) {
-             // Fallback attempt if structure differs slightly
              if(result && result.transactionId) {
-                 // Sometimes only transaction ID is returned first
-                 // For now, we assume result.account exists
                  throw new Error('Authorization completed but account data missing. Try again.');
              } else {
                  throw new Error('Authorization failed or denied.');
@@ -800,12 +789,12 @@ export default function BlendPage() {
 
         // ✅ STEP 2: Verify XEC balance via XRPL
         if (!xrplClientRef.current) {
-            throw new Error('XRPL client not initialized');
+             throw new Error('XRPL client not initialized');
         }
         
         const response = await xrplClientRef.current.request({
           method: 'account_lines',
-          account: xrplAddress,
+          account: xrplAddress, 
           peer: XEC_CONFIG.issuer,
         });
 
@@ -882,7 +871,6 @@ export default function BlendPage() {
       console.error('❌ Unlock error:', error);
       setGenerationError(error.message || 'Failed to unlock blend. See console for details.');
       
-      // Better alert for common errors
       if (error.message.includes('Configuration Error')) {
           alert(error.message);
       } else if (error.message.includes('popup')) {
@@ -904,7 +892,6 @@ export default function BlendPage() {
       alert('Blend not ready. Please generate or select a blend first.');
       return;
     }
-
     setVerificationState('verifying');
 
     try {
@@ -922,7 +909,7 @@ export default function BlendPage() {
       
       // ✅ Validate API key first
       if (!XUMM_API_KEY || XUMM_API_KEY === 'your-api-key-here' || XUMM_API_KEY.length < 10) {
-        throw new Error('❌ Configuration Error:\n\nYour Xumm Wallet API key is not properly configured.\n\nPlease check Vercel environment variables → NEXT_PUBLIC_XUMM_API_KEY');
+        throw new Error('❌ Configuration Error:\n\nYour Xumm Wallet API key is not configured.\n\nCheck Vercel → NEXT_PUBLIC_XUMM_API_KEY');
       }
       
       const xumm = new window.Xumm(XUMM_API_KEY);
@@ -930,7 +917,7 @@ export default function BlendPage() {
 
       console.log('🔐 Requesting Xumm authorization...');
       
-      // ✅ STEP 1: Authorize Connection (Modern Promise Pattern - Removed .off() calls)
+      // ✅ STEP 1: Authorize Connection (Modern Promise Pattern)
       let accountAddress;
       try {
         const result = await xumm.authorize();
@@ -1015,7 +1002,7 @@ export default function BlendPage() {
             requiredXec: targetProduct.xec,
           })
         });
-        
+         
         window.location.href = `/blend-delivery?blend=${targetProduct.slug}&verified=true&ai=${!!generatedBlend}&payment=xec`;
       } else {
         setVerificationState('insufficient');
@@ -1127,7 +1114,7 @@ export default function BlendPage() {
         </section>
       )}
 
-      {/* ✅✅✅ Blend Recipe Display with PREVIEW + UNLOCK UI */}
+      {/* Blend Recipe Display with PREVIEW + UNLOCK UI */}
       {(generatedBlend || !generatedBlend) && (
         <div className="py-12 px-6 max-w-4xl mx-auto">
           <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 mb-8">
@@ -1140,7 +1127,7 @@ export default function BlendPage() {
               <>
                 <p className="text-gray-300 mb-4 italic">{generatedBlend.description}</p>
                 
-                {/* ✅ Show price/XEC requirement */}
+                {/* Show price/XEC requirement */}
                 <div className="bg-black/50 p-4 rounded-lg mb-4 border border-turquoise/30">
                   <p className="text-sm text-gray-300">
                     <span className="font-semibold text-turquoise">Price:</span> ${generatedBlend.price} USD 
@@ -1149,7 +1136,7 @@ export default function BlendPage() {
                   </p>
                 </div>
                 
-                {/* ✅ Show full recipe only if not preview */}
+                {/* Show full recipe only if not preview */}
                 {!generatedBlend.preview ? (
                   <>
                     <h3 className="text-lg font-semibold mb-4">Your Personalized Recipe:</h3>
@@ -1183,7 +1170,7 @@ export default function BlendPage() {
                     </button>
                   </>
                 ) : (
-                  // ✅ Preview mode: Show teaser + unlock buttons
+                  // Preview mode: Show teaser + unlock buttons
                   <div className="text-center py-6">
                     <div className="bg-gray-800/50 p-6 rounded-xl mb-6 border border-gray-700">
                       <p className="text-gray-400 mb-2 text-lg">🔒 Full Recipe Locked</p>
