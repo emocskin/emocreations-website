@@ -1,39 +1,62 @@
-// app/api/get-unlocked-blend/route.js
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+
+// ✅ 1. Fail-Fast Environment Validation (Consistent with other routes)
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("❌ Missing Supabase environment variables. Please check your .env.local file.");
+}
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const slug = searchParams.get('slug');
+// ✅ 2. ReDoS-immune UUID validation helper
+const isValidUUID = (uuid: unknown): uuid is string => {
+  return typeof uuid === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(uuid);
+};
+
+export async function GET(request: NextRequest) {
+  // ✅ Next.js idiomatic way to get search params
+  const { searchParams } = request.nextUrl;
+  const orderId = searchParams.get('orderId');
   
-  if (!slug) {
-    return NextResponse.json({ error: 'slug required' }, { status: 400 });
+  // ✅ 3. Early validation to prevent unnecessary DB hits
+  if (!orderId) {
+    return NextResponse.json({ error: 'orderId is required' }, { status: 400 });
+  }
+  
+  if (!isValidUUID(orderId)) {
+    return NextResponse.json({ error: 'Invalid orderId format' }, { status: 400 });
   }
 
-  // Fetch from unlocks table (only return if verified)
-  const { data, error } = await supabase
-    .from('unlocks')
-    .select('blend_name, blend_description, blend_recipe, blend_instructions, is_ai_blend')
-    .eq('blend_slug', slug)
-    .eq('unlocked', true) // Add this column if tracking unlock status
-    .order('verified_at', { ascending: false })
-    .limit(1)
-    .single();
+  try {
+    // ✅ Fetch from the 'orders' table (where our finalize-order route saves the recipe)
+    const { data, error } = await supabase
+      .from('orders')
+      .select('blend_recipe, blend_preferences, status, email')
+      .eq('id', orderId)
+      .single();
 
-  if (error || !data) {
-    return NextResponse.json({ error: 'Blend not found or not verified' }, { status: 404 });
+    if (error || !data) {
+      return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+    }
+
+    // ✅ CRITICAL SECURITY CHECK: Ensure the order is actually paid before revealing the recipe
+    if (data.status !== 'paid' && data.status !== 'processing' && data.status !== 'fulfilled') {
+      return NextResponse.json({ error: 'Blend not yet unlocked. Payment required.' }, { status: 403 });
+    }
+
+    // ✅ Return the securely unlocked data
+    return NextResponse.json({
+      success: true,
+      blend: data.blend_recipe,
+      preferences: data.blend_preferences,
+      email: data.email // Useful for the frontend to confirm which email it was sent to
+    });
+
+  } catch (err: unknown) {
+    console.error('❌ Error fetching unlocked blend:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-
-  return NextResponse.json({
-    name: data.blend_name,
-    description: data.blend_description,
-    recipe: data.blend_recipe,
-    instructions: data.blend_instructions,
-    isAi: data.is_ai_blend
-  });
 }

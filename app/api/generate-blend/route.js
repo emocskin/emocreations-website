@@ -1,14 +1,17 @@
-// app/api/generate-blend/route.js
 import { createClient } from '@supabase/supabase-js';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { Client } from 'xrpl';
 
-// ✅ Supabase client
+// ✅ 1. Fail-Fast Environment Validation
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  throw new Error("❌ Missing Supabase environment variables. Please check your .env.local file.");
+}
+
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
@@ -21,7 +24,7 @@ const poeClient = process.env.POE_API_KEY
   : null;
 
 // ✅ Rate Limiter
-let ratelimit;
+let ratelimit: Ratelimit | undefined;
 const getRatelimit = () => {
   if (!ratelimit && process.env.UPSTASH_REDIS_REST_URL) {
     const redis = new Redis({
@@ -45,61 +48,108 @@ const XEC_CONFIG = {
   requiredUsdThreshold: 25,
 };
 
+// ✅ BASE_OILS definition
+const BASE_OILS: Record<string, string> = {
+  normal: "Jojoba Oil",
+  dry: "Sweet Almond Oil",
+  oily: "Grapeseed Oil",
+  sensitive: "Fractionated Coconut Oil",
+};
+
 // ✅✅✅ HELPER: Verify user authorization (XEC balance or Preview mode)
-async function verifyUserAuthorization(request, blendData) {
-  // ✅ Option 1: Allow PREVIEW mode (no auth required - limited data)
+async function verifyUserAuthorization(request: NextRequest, blendData: any) {
   const isPreviewRequest = request.headers.get('x-preview') === 'true';
   if (isPreviewRequest) {
-    console.log('🔍 Preview mode requested - returning limited data');
     return { authorized: true, previewMode: true };
   }
 
-  // ✅ Option 2: Check XRPL Address Header (For XEC Payment Auth)
   const xrplAddress = request.headers.get('x-xrpl-address');
   if (xrplAddress) {
+    let client: Client | null = null;
     try {
-      console.log('🔍 Checking XEC balance for address:', xrplAddress.slice(0, 10) + '...');
-      const client = new Client('wss://s1.ripple.com:51233');
-      await client.connect();
+      client = new Client('wss://s1.ripple.com:51233');
       
+      // PRO FIX: Add a timeout to the connection itself to prevent serverless hangs
+      const connectPromise = client.connect();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('XRPL connection timeout')), 5000)
+      );
+      await Promise.race([connectPromise, timeoutPromise]);
+      
+      // 1. Get User XEC Balance
       const response = await client.request({
-        method: 'account_lines',
+        command: 'account_lines',
         account: xrplAddress,
         peer: XEC_CONFIG.issuer,
       });
       
-      await client.disconnect();
-      
       let xecBalance = 0;
       const trustline = response.result.lines.find(
-        line => line.currency === XEC_CONFIG.currency && line.account === XEC_CONFIG.issuer
+        (line: any) => line.currency === XEC_CONFIG.currency && line.account === XEC_CONFIG.issuer
       );
       
       if (trustline) {
         xecBalance = Math.abs(parseFloat(trustline.balance));
       }
       
-      // Get current XEC price
-      let xecPriceUsd = 0.0004;
+      // 2. CRITICAL FIX: Get Custom XEC Price via XRPL AMM (NOT CoinGecko 'ecash')
+      let xecPriceUsd = 0.46; // Safe fallback based on your initial pool data
+      
       try {
-        const priceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ecash&vs_currencies=usd');
-        if (priceResponse.ok) {
-          const priceData = await priceResponse.json();
-          xecPriceUsd = priceData.ecash?.usd || priceData.xec?.usd || 0.0004;
+        const ammResponse = await client.request({
+          command: 'amm_info',
+          asset: { currency: XEC_CONFIG.currency, issuer: XEC_CONFIG.issuer },
+          asset2: 'XRP',
+          ledger_index: 'validated',
+        });
+
+        const pool = ammResponse.result.amm;
+        if (pool && pool.amount && pool.amount2) {
+          const parseAmount = (amt: any) => {
+            if (typeof amt === 'string') return Number(amt) / 1_000_000; // XRP drops
+            // PRO FIX: Added `amt !== null` to prevent TypeError, as `typeof null === 'object'` in JS
+            if (typeof amt === 'object' && amt !== null && amt.value) return Number(amt.value); // Token
+            return 0;
+          };
+
+          const amt1 = parseAmount(pool.amount);
+          const amt2 = parseAmount(pool.amount2);
+          
+          const isAmt1XRP = typeof pool.amount === 'string';
+          const xrpBalance = isAmt1XRP ? amt1 : amt2;
+          const xecBalancePool = isAmt1XRP ? amt2 : amt1;
+
+          if (xecBalancePool > 0 && xrpBalance > 0) {
+            const xecPriceInXRP = xrpBalance / xecBalancePool;
+
+            // Fetch live XRP/USD from CoinGecko
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            try {
+              const xrpPriceResponse = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd', { signal: controller.signal });
+              if (xrpPriceResponse.ok) {
+                const xrpData = await xrpPriceResponse.json();
+                const xrpUsd = xrpData.ripple?.usd || 0.50;
+                const calculatedPrice = xecPriceInXRP * xrpUsd;
+                if (calculatedPrice > 0) {
+                  xecPriceUsd = calculatedPrice;
+                }
+              }
+            } finally {
+              clearTimeout(timeoutId);
+            }
+          }
         }
-      } catch (e) {
-        console.warn('⚠️ Using fallback XEC price:', e);
+      } catch (ammError) {
+        console.warn('⚠️ AMM price fetch failed, using fallback price:', ammError);
       }
       
+      // PRO FIX: Use `||` instead of `??` to correctly catch `NaN` if blendData.price is undefined
+      const priceUsd = Number(blendData.price) || 38;
+      const requiredXec = Math.ceil(priceUsd / xecPriceUsd);
       const usdValue = xecBalance * xecPriceUsd;
-      console.log('📊 XEC Balance:', xecBalance, '| USD Value:', usdValue.toFixed(2));
-      
-      // Check if balance meets threshold
-      const priceUsd = blendData.price || 38;
-      const requiredXec = Math.ceil(priceUsd / 0.37);
       
       if (xecBalance >= requiredXec && usdValue >= XEC_CONFIG.requiredUsdThreshold) {
-        console.log('✅ XEC Balance verified successfully');
         return { 
           authorized: true, 
           previewMode: false,
@@ -108,1015 +158,74 @@ async function verifyUserAuthorization(request, blendData) {
           usdValue
         };
       } else {
-        console.log('❌ Insufficient XEC balance');
         return { 
           authorized: false, 
           previewMode: false,
           method: 'insufficient-balance'
         };
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('❌ XEC balance verification failed:', e.message);
-      // Continue to other auth methods
+    } finally {
+      if (client?.isConnected()) {
+        try {
+          await client.disconnect();
+        } catch (disconnectError) {
+          console.warn('Failed to disconnect XRPL client:', disconnectError);
+        }
+      }
     }
   }
 
-  // ❌ No valid auth found
-  console.log('❌ No valid authorization found');
   return { authorized: false, previewMode: false };
 }
 
-// ✅✅✅ ULTIMATE ESSENTIAL OIL LIBRARY - 150+ CONDITIONS
-// NOTE: Ensure this object contains ALL your conditions. 
-// I am adding a 'default' key here to prevent the crash found in analysis.
-const ESSENTIAL_OILS = {
+// ✅✅✅ ULTIMATE ESSENTIAL OIL LIBRARY (Keep your full object here)
+const ESSENTIAL_OILS: Record<string, any[]> = {
   default: [
     { name: "Lavender", amount: "10 drops", purpose: "General wellness" },
     { name: "Peppermint", amount: "5 drops", purpose: "Energizing" },
     { name: "Lemon", amount: "5 drops", purpose: "Uplifting" }
-  ],
-  headache: [
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling pain relief" },
-    { name: "Lavender", amount: "10 drops", purpose: "Calms nervous system" },
-    { name: "Eucalyptus", amount: "6 drops", purpose: "Opens sinuses, reduces inflammation" }
-  ],
-  migraine: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Reduces migraine intensity" },
-    { name: "Lavender", amount: "10 drops", purpose: "Calms pain signals" },
-    { name: "Rosemary", amount: "6 drops", purpose: "Improves circulation to head" }
-  ],
-  tension: [
-    { name: "Lavender", amount: "10 drops", purpose: "Releases physical tension" },
-    { name: "Marjoram", amount: "8 drops", purpose: "Muscle relaxant" },
-    { name: "Bergamot FCF", amount: "6 drops", purpose: "Eases emotional tension" }
-  ],
-  musclepain: [
-    { name: "Ginger", amount: "8 drops", purpose: "Warming antispasmodic" },
-    { name: "Black Pepper", amount: "8 drops", purpose: "Enhances absorption" },
-    { name: "Marjoram", amount: "8 drops", purpose: "Eases muscle cramping" }
-  ],
-  soreness: [
-    { name: "Ginger", amount: "8 drops", purpose: "Reduces post-exercise soreness" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Cooling relief" }
-  ],
-  joint: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Supports tissue integrity" },
-    { name: "Helichrysum", amount: "6 drops", purpose: "Nerve repair, pain relief" },
-    { name: "Ginger", amount: "6 drops", purpose: "Reduces inflammation" }
-  ],
-  arthritis: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Myrrh", amount: "8 drops", purpose: "Joint lubrication support" },
-    { name: "Ginger", amount: "6 drops", purpose: "Warming pain relief" }
-  ],
-  sciatica: [
-    { name: "Wintergreen", amount: "8 drops", purpose: "Natural analgesic" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Nerve-regenerative" },
-    { name: "Marjoram", amount: "10 drops", purpose: "Muscle relaxant" }
-  ],
-  nervepain: [
-    { name: "Helichrysum", amount: "10 drops", purpose: "Nerve repair" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calms nerve signals" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  neuropathy: [
-    { name: "Helichrysum", amount: "10 drops", purpose: "Supports nerve health" },
-    { name: "Ginger", amount: "8 drops", purpose: "Improves circulation" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Cooling sensation" }
-  ],
-  backpain: [
-    { name: "Ginger", amount: "8 drops", purpose: "Warming pain relief" },
-    { name: "Black Pepper", amount: "8 drops", purpose: "Increases circulation" },
-    { name: "Lavender", amount: "8 drops", purpose: "Relaxes tense muscles" }
-  ],
-  neckpain: [
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling relief" },
-    { name: "Lavender", amount: "8 drops", purpose: "Releases tension" },
-    { name: "Rosemary", amount: "6 drops", purpose: "Improves circulation" }
-  ],
-  shoulder: [
-    { name: "Lavender", amount: "8 drops", purpose: "Relieves tension" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Cooling pain relief" },
-    { name: "Rosemary", amount: "6 drops", purpose: "Improves circulation" }
-  ],
-  knee: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Joint support" },
-    { name: "Ginger", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Orange", amount: "6 drops", purpose: "Uplifting, circulation" }
-  ],
-  injury: [
-    { name: "Helichrysum", amount: "10 drops", purpose: "Tissue repair" },
-    { name: "Lavender", amount: "8 drops", purpose: "Pain relief" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Cellular regeneration" }
-  ],
-  sprain: [
-    { name: "Helichrysum", amount: "10 drops", purpose: "Reduces bruising" },
-    { name: "Lavender", amount: "8 drops", purpose: "Pain relief" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Cooling" }
-  ],
-  strain: [
-    { name: "Ginger", amount: "8 drops", purpose: "Warming relief" },
-    { name: "Marjoram", amount: "8 drops", purpose: "Muscle relaxant" },
-    { name: "Lavender", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  tendonitis: [
-    { name: "Helichrysum", amount: "10 drops", purpose: "Tendon repair" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Lavender", amount: "6 drops", purpose: "Pain relief" }
-  ],
-  bursitis: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Reduces inflammation" },
-    { name: "Lavender", amount: "8 drops", purpose: "Pain relief" },
-    { name: "Ginger", amount: "6 drops", purpose: "Warming circulation" }
-  ],
-  plantar: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Cooling foot relief" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Eucalyptus", amount: "6 drops", purpose: "Circulation" }
-  ],
-  carpal: [
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling wrist relief" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Tissue support" }
-  ],
-  fibromyalgia: [
-    { name: "Lavender", amount: "10 drops", purpose: "Pain relief" },
-    { name: "Marjoram", amount: "8 drops", purpose: "Muscle relaxant" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  chronic_pain: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Chronic pain support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Nervous system calm" },
-    { name: "Helichrysum", amount: "6 drops", purpose: "Tissue repair" }
-  ],
-  inflammation: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Systemic inflammation" },
-    { name: "Turmeric", amount: "8 drops", purpose: "Powerful anti-inflammatory" },
-    { name: "Lavender", amount: "6 drops", purpose: "Calming" }
-  ],
-  swelling: [
-    { name: "Cypress", amount: "10 drops", purpose: "Reduces fluid retention" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Cooling" }
   ],
   stress: [
     { name: "Lavender", amount: "10 drops", purpose: "Calms nerves, reduces inflammation" },
     { name: "Roman Chamomile", amount: "8 drops", purpose: "Potent antispasmodic, soothes tissue" },
     { name: "Bergamot FCF", amount: "6 drops", purpose: "Uplifting, zero phototoxicity" }
   ],
-  anxiety: [
-    { name: "Lavender", amount: "10 drops", purpose: "Reduces anxiety" },
-    { name: "Bergamot FCF", amount: "8 drops", purpose: "Calms without sedation" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Slows racing heart" }
-  ],
-  panic: [
-    { name: "Lavender", amount: "12 drops", purpose: "Calms panic response" },
-    { name: "Bergamot FCF", amount: "8 drops", purpose: "Reduces hyperventilation" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Deepens breathing" }
-  ],
-  depression: [
-    { name: "Bergamot FCF", amount: "10 drops", purpose: "Uplifts mood" },
-    { name: "Ylang Ylang", amount: "8 drops", purpose: "Balances emotions" },
-    { name: "Grapefruit", amount: "6 drops", purpose: "Energizing, positive" }
-  ],
-  mood: [
-    { name: "Bergamot FCF", amount: "10 drops", purpose: "Balances mood" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calms emotions" },
-    { name: "Sweet Orange", amount: "6 drops", purpose: "Uplifting" }
-  ],
-  anger: [
-    { name: "Bergamot FCF", amount: "10 drops", purpose: "Cools anger" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calms reactivity" },
-    { name: "Roman Chamomile", amount: "6 drops", purpose: "Soothes irritation" }
-  ],
-  grief: [
-    { name: "Rose", amount: "5 drops", purpose: "Heart healing" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Supports emotional processing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Comforting" }
-  ],
-  trauma: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms nervous system" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Supports healing" },
-    { name: "Roman Chamomile", amount: "6 drops", purpose: "Soothes shock" }
-  ],
-  overwhelm: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms overwhelm" },
-    { name: "Cedarwood", amount: "8 drops", purpose: "Grounding" },
-    { name: "Bergamot FCF", amount: "6 drops", purpose: "Lightens mood" }
-  ],
-  burnout: [
-    { name: "Lavender", amount: "10 drops", purpose: "Restores calm" },
-    { name: "Ylang Ylang", amount: "8 drops", purpose: "Rebalances" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Deepens rest" }
-  ],
-  fatigue: [
-    { name: "Peppermint", amount: "8 drops", purpose: "Energizing" },
-    { name: "Rosemary", amount: "8 drops", purpose: "Mental clarity" },
-    { name: "Lemon", amount: "6 drops", purpose: "Uplifting" }
-  ],
-  exhaustion: [
-    { name: "Peppermint", amount: "8 drops", purpose: "Energy boost" },
-    { name: "Rosemary", amount: "8 drops", purpose: "Mental fatigue" },
-    { name: "Grapefruit", amount: "6 drops", purpose: "Uplifting" }
-  ],
-  irritability: [
-    { name: "Bergamot FCF", amount: "10 drops", purpose: "Calms irritability" },
-    { name: "Lavender", amount: "8 drops", purpose: "Soothes" },
-    { name: "Roman Chamomile", amount: "6 drops", purpose: "Gentle calming" }
-  ],
-  frustration: [
-    { name: "Bergamot FCF", amount: "10 drops", purpose: "Releases frustration" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calms" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Balances" }
-  ],
-  loneliness: [
-    { name: "Rose", amount: "5 drops", purpose: "Heart comfort" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calming" },
-    { name: "Bergamot FCF", amount: "6 drops", purpose: "Uplifting" }
-  ],
-  sadness: [
-    { name: "Bergamot FCF", amount: "10 drops", purpose: "Uplifts" },
-    { name: "Ylang Ylang", amount: "8 drops", purpose: "Emotional balance" },
-    { name: "Lavender", amount: "6 drops", purpose: "Comfort" }
-  ],
-  fear: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms fear" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Grounding" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Stability" }
-  ],
-  worry: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms worry" },
-    { name: "Bergamot FCF", amount: "8 drops", purpose: "Eases mind" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  shock: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms shock" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Stabilizing" },
-    { name: "Roman Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  emotional: [
-    { name: "Lavender", amount: "10 drops", purpose: "Emotional balance" },
-    { name: "Bergamot FCF", amount: "8 drops", purpose: "Mood support" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Heart opening" }
-  ],
-  insomnia: [
-    { name: "Lavender", amount: "12 drops", purpose: "Promotes restful sleep" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Sedative, balances emotions" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding, promotes focus" }
-  ],
-  sleep: [
-    { name: "Lavender", amount: "12 drops", purpose: "Sleep induction" },
-    { name: "Cedarwood", amount: "8 drops", purpose: "Sedative" },
-    { name: "Roman Chamomile", amount: "6 drops", purpose: "Calming" }
-  ],
-  restless: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms restlessness" },
-    { name: "Vetiver", amount: "8 drops", purpose: "Deeply grounding" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Stabilizing" }
-  ],
-  nightmares: [
-    { name: "Lavender", amount: "10 drops", purpose: "Peaceful sleep" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Spiritual protection" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  sleeplessness: [
-    { name: "Lavender", amount: "12 drops", purpose: "Induces sleep" },
-    { name: "Cedarwood", amount: "8 drops", purpose: "Sedative" },
-    { name: "Vetiver", amount: "6 drops", purpose: "Deeply calming" }
-  ],
-  jetlag: [
-    { name: "Lavender", amount: "10 drops", purpose: "Regulates sleep" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Alertness when needed" },
-    { name: "Lemon", amount: "6 drops", purpose: "Resets circadian" }
-  ],
-  shiftwork: [
-    { name: "Lavender", amount: "10 drops", purpose: "Sleep support" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Wakefulness" },
-    { name: "Rosemary", amount: "6 drops", purpose: "Mental clarity" }
-  ],
-  apnea: [
-    { name: "Lavender", amount: "10 drops", purpose: "Relaxation" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Deep breathing" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  snoring: [
-    { name: "Lavender", amount: "10 drops", purpose: "Relaxation" },
-    { name: "Eucalyptus", amount: "8 drops", purpose: "Opens airways" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  dreams: [
-    { name: "Lavender", amount: "10 drops", purpose: "Peaceful sleep" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Spiritual connection" },
-    { name: "Sandalwood", amount: "6 drops", purpose: "Dream enhancement" }
-  ],
-  menopause: [
-    { name: "Clary Sage", amount: "10 drops", purpose: "Balances hormones" },
-    { name: "Geranium", amount: "8 drops", purpose: "Reduces hot flashes" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Emotional balance" }
-  ],
-  hotflash: [
-    { name: "Clary Sage", amount: "10 drops", purpose: "Regulates temperature" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling" },
-    { name: "Geranium", amount: "6 drops", purpose: "Hormone balancing" }
-  ],
-  pms: [
-    { name: "Clary Sage", amount: "10 drops", purpose: "Hormone regulation" },
-    { name: "Lavender", amount: "8 drops", purpose: "Cramp relief" },
-    { name: "Geranium", amount: "6 drops", purpose: "Mood support" }
-  ],
-  cramps: [
-    { name: "Clary Sage", amount: "10 drops", purpose: "Antispasmodic" },
-    { name: "Marjoram", amount: "8 drops", purpose: "Muscle relaxant" },
-    { name: "Lavender", amount: "6 drops", purpose: "Pain relief" }
-  ],
-  period: [
-    { name: "Clary Sage", amount: "10 drops", purpose: "Hormone balance" },
-    { name: "Lavender", amount: "8 drops", purpose: "Cramp relief" },
-    { name: "Geranium", amount: "6 drops", purpose: "Emotional support" }
-  ],
-  endometriosis: [
-    { name: "Clary Sage", amount: "10 drops", purpose: "Hormone modulation" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Pain relief" },
-    { name: "Lavender", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  pcos: [
-    { name: "Clary Sage", amount: "10 drops", purpose: "Insulin sensitivity" },
-    { name: "Geranium", amount: "8 drops", purpose: "Hormone balance" },
-    { name: "Cypress", amount: "6 drops", purpose: "Lymphatic support" }
-  ],
-  fertility: [
-    { name: "Clary Sage", amount: "8 drops", purpose: "Hormone balance" },
-    { name: "Geranium", amount: "8 drops", purpose: "Reproductive support" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Relaxation" }
-  ],
-  pregnancy: [
-    { name: "Lavender", amount: "8 drops", purpose: "Calming (safe in pregnancy)" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Grounding" },
-    { name: "Sweet Orange", amount: "6 drops", purpose: "Uplifting, reduces nausea" }
-  ],
-  postpartum: [
-    { name: "Lavender", amount: "10 drops", purpose: "Healing, calming" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Tissue repair" },
-    { name: "Sweet Orange", amount: "6 drops", purpose: "Mood support" }
-  ],
-  libido: [
-    { name: "Ylang Ylang", amount: "10 drops", purpose: "Aphrodisiac" },
-    { name: "Sandalwood", amount: "8 drops", purpose: "Sensual grounding" },
-    { name: "Jasmine", amount: "6 drops", purpose: "Confidence boosting" }
-  ],
-  impotence: [
-    { name: "Ylang Ylang", amount: "10 drops", purpose: "Confidence" },
-    { name: "Sandalwood", amount: "8 drops", purpose: "Grounding" },
-    { name: "Ginger", amount: "6 drops", purpose: "Circulation" }
-  ],
-  infertility: [
-    { name: "Clary Sage", amount: "8 drops", purpose: "Hormone balance" },
-    { name: "Geranium", amount: "8 drops", purpose: "Reproductive support" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Cellular health" }
-  ],
-  miscarriage: [
-    { name: "Rose", amount: "5 drops", purpose: "Heart healing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Comfort" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Grief support" }
-  ],
-  abortion: [
-    { name: "Lavender", amount: "10 drops", purpose: "Physical healing" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Emotional support" },
-    { name: "Rose", amount: "6 drops", purpose: "Heart comfort" }
-  ],
-  breastfeeding: [
-    { name: "Lavender", amount: "8 drops", purpose: "Calming (safe)" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Healing" },
-    { name: "Sweet Orange", amount: "6 drops", purpose: "Uplifting" }
-  ],
-  lactation: [
-    { name: "Fennel", amount: "8 drops", purpose: "Supports milk production" },
-    { name: "Lavender", amount: "8 drops", purpose: "Relaxation" },
-    { name: "Sweet Orange", amount: "6 drops", purpose: "Mood support" }
-  ],
-  mastitis: [
-    { name: "Lavender", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling relief" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Healing" }
-  ],
-  prostate: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Prostate support" },
-    { name: "Sandalwood", amount: "8 drops", purpose: "Urinary support" },
-    { name: "Cypress", amount: "6 drops", purpose: "Circulation" }
-  ],
-  ed: [
-    { name: "Ylang Ylang", amount: "10 drops", purpose: "Confidence" },
-    { name: "Ginger", amount: "8 drops", purpose: "Circulation" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  digestion: [
-    { name: "Ginger", amount: "10 drops", purpose: "Improves circulation, aids digestion" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Relieves GI discomfort" },
-    { name: "Fennel", amount: "6 drops", purpose: "Reduces bloating" }
-  ],
-  bloating: [
-    { name: "Ginger", amount: "10 drops", purpose: "Reduces bloating" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Carminative" },
-    { name: "Fennel", amount: "6 drops", purpose: "Anti-gas" }
-  ],
-  nausea: [
-    { name: "Ginger", amount: "10 drops", purpose: "Anti-nausea" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Settles stomach" },
-    { name: "Lemon", amount: "6 drops", purpose: "Fresh, reduces queasiness" }
-  ],
-  ibs: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Antispasmodic" },
-    { name: "Ginger", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Fennel", amount: "6 drops", purpose: "Digestive support" }
-  ],
-  constipation: [
-    { name: "Ginger", amount: "10 drops", purpose: "Stimulates digestion" },
-    { name: "Fennel", amount: "8 drops", purpose: "Gentle laxative" },
-    { name: "Black Pepper", amount: "6 drops", purpose: "Warming, motility" }
-  ],
-  diarrhea: [
-    { name: "Ginger", amount: "10 drops", purpose: "Settles digestion" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Antispasmodic" },
-    { name: "Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  heartburn: [
-    { name: "Ginger", amount: "10 drops", purpose: "Reduces acid reflux" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling (use cautiously)" },
-    { name: "Fennel", amount: "6 drops", purpose: "Digestive soothing" }
-  ],
-  gerd: [
-    { name: "Ginger", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Chamomile", amount: "8 drops", purpose: "Soothes esophagus" },
-    { name: "Lavender", amount: "6 drops", purpose: "Calming" }
-  ],
-  acid_reflux: [
-    { name: "Ginger", amount: "10 drops", purpose: "Reduces reflux" },
-    { name: "Chamomile", amount: "8 drops", purpose: "Soothing" },
-    { name: "Fennel", amount: "6 drops", purpose: "Digestive support" }
-  ],
-  indigestion: [
-    { name: "Ginger", amount: "10 drops", purpose: "Aids digestion" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Settles stomach" },
-    { name: "Fennel", amount: "6 drops", purpose: "Reduces gas" }
-  ],
-  gas: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Carminative" },
-    { name: "Fennel", amount: "8 drops", purpose: "Anti-gas" },
-    { name: "Ginger", amount: "6 drops", purpose: "Digestive aid" }
-  ],
-  colitis: [
-    { name: "Chamomile", amount: "10 drops", purpose: "Soothing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Healing" }
-  ],
-  crohns: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Chamomile", amount: "8 drops", purpose: "Soothing" },
-    { name: "Lavender", amount: "6 drops", purpose: "Calming" }
-  ],
-  leaky_gut: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Gut lining support" },
-    { name: "Ginger", amount: "8 drops", purpose: "Digestive aid" },
-    { name: "Lavender", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  sibo: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Antimicrobial" },
-    { name: "Oregano", amount: "8 drops", purpose: "Antibacterial" },
-    { name: "Ginger", amount: "6 drops", purpose: "Motility" }
-  ],
-  congestion: [
-    { name: "Eucalyptus", amount: "10 drops", purpose: "Opens airways" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Decongestant" },
-    { name: "Tea Tree", amount: "6 drops", purpose: "Antimicrobial" }
-  ],
-  sinus: [
-    { name: "Eucalyptus", amount: "10 drops", purpose: "Clears sinuses" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Opens passages" },
-    { name: "Lavender", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  cold: [
-    { name: "Eucalyptus", amount: "8 drops", purpose: "Decongestant" },
-    { name: "Tea Tree", amount: "8 drops", purpose: "Antiviral" },
-    { name: "Lavender", amount: "6 drops", purpose: "Immune support" }
-  ],
-  flu: [
-    { name: "Tea Tree", amount: "10 drops", purpose: "Antiviral" },
-    { name: "Eucalyptus", amount: "8 drops", purpose: "Opens breathing" },
-    { name: "Lavender", amount: "6 drops", purpose: "Rest support" }
-  ],
-  cough: [
-    { name: "Eucalyptus", amount: "10 drops", purpose: "Suppresses cough" },
-    { name: "Lavender", amount: "8 drops", purpose: "Soothes throat" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Deep breathing" }
-  ],
-  asthma: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms breathing" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Deepens breath" },
-    { name: "Eucalyptus", amount: "6 drops", purpose: "Opens airways (use cautiously)" }
-  ],
-  allergies: [
-    { name: "Lavender", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Opens airways" },
-    { name: "Lemon", amount: "6 drops", purpose: "Antihistamine support" }
-  ],
-  bronchitis: [
-    { name: "Eucalyptus", amount: "10 drops", purpose: "Clears bronchi" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Deep breathing" },
-    { name: "Lavender", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  pneumonia: [
-    { name: "Eucalyptus", amount: "10 drops", purpose: "Opens lungs" },
-    { name: "Tea Tree", amount: "8 drops", purpose: "Antimicrobial" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Respiratory support" }
-  ],
-  pleurisy: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Deep breathing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Eucalyptus", amount: "6 drops", purpose: "Opens airways" }
-  ],
-  laryngitis: [
-    { name: "Lavender", amount: "10 drops", purpose: "Soothes throat" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Cooling" }
-  ],
-  sore_throat: [
-    { name: "Lavender", amount: "10 drops", purpose: "Soothes throat" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling relief" },
-    { name: "Tea Tree", amount: "6 drops", purpose: "Antimicrobial" }
-  ],
-  acne: [
-    { name: "Tea Tree", amount: "10 drops", purpose: "Antibacterial" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Scarring support" }
-  ],
-  eczema: [
-    { name: "Lavender", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Skin repair" },
-    { name: "Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  psoriasis: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Cellular regeneration" },
-    { name: "Myrrh", amount: "8 drops", purpose: "Skin healing" },
-    { name: "Lavender", amount: "6 drops", purpose: "Anti-inflammatory" }
-  ],
-  rosacea: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms redness" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  aging: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Cellular support" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Tissue regeneration" },
-    { name: "Myrrh", amount: "6 drops", purpose: "Anti-aging" }
-  ],
-  wrinkles: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Firms skin" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Regenerative" },
-    { name: "Rose", amount: "6 drops", purpose: "Hydrating" }
-  ],
-  scars: [
-    { name: "Helichrysum", amount: "10 drops", purpose: "Scar reduction" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Cellular regeneration" },
-    { name: "Lavender", amount: "6 drops", purpose: "Healing support" }
-  ],
-  burns: [
-    { name: "Lavender", amount: "10 drops", purpose: "Pain relief, healing" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Tissue repair" },
-    { name: "Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  wounds: [
-    { name: "Helichrysum", amount: "10 drops", purpose: "Wound healing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Antimicrobial" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Cellular repair" }
-  ],
-  dermatitis: [
-    { name: "Lavender", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Chamomile", amount: "8 drops", purpose: "Soothing" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Healing" }
-  ],
-  hives: [
-    { name: "Lavender", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling" },
-    { name: "Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  rash: [
-    { name: "Lavender", amount: "10 drops", purpose: "Soothing" },
-    { name: "Chamomile", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Healing" }
-  ],
-  itching: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Cooling relief" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  dry_skin: [
-    { name: "Lavender", amount: "10 drops", purpose: "Hydrating" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Cellular support" },
-    { name: "Sandalwood", amount: "6 drops", purpose: "Moisturizing" }
-  ],
-  oily_skin: [
-    { name: "Tea Tree", amount: "10 drops", purpose: "Balancing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Regulating" },
-    { name: "Lemon", amount: "6 drops", purpose: "Clarifying" }
-  ],
-  sensitive_skin: [
-    { name: "Lavender", amount: "10 drops", purpose: "Gentle calming" },
-    { name: "Chamomile", amount: "8 drops", purpose: "Soothing" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Protective" }
-  ],
-  sunburn: [
-    { name: "Lavender", amount: "10 drops", purpose: "Cooling relief" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling" },
-    { name: "Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  cellulite: [
-    { name: "Grapefruit", amount: "10 drops", purpose: "Lymphatic support" },
-    { name: "Cypress", amount: "8 drops", purpose: "Circulation" },
-    { name: "Juniper", amount: "6 drops", purpose: "Detoxifying" }
-  ],
-  varicose: [
-    { name: "Cypress", amount: "10 drops", purpose: "Vein support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Lemon", amount: "6 drops", purpose: "Circulation" }
-  ],
-  spider_veins: [
-    { name: "Cypress", amount: "10 drops", purpose: "Vein tone" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Helichrysum", amount: "6 drops", purpose: "Tissue repair" }
-  ],
-  glucose: [
-    { name: "Cinnamon", amount: "6 drops", purpose: "Supports healthy glucose metabolism" },
-    { name: "Ginger", amount: "8 drops", purpose: "Improves circulation" },
-    { name: "Lemon", amount: "6 drops", purpose: "Antioxidant support" }
-  ],
-  diabetes: [
-    { name: "Cinnamon", amount: "6 drops", purpose: "Glucose support" },
-    { name: "Ginger", amount: "8 drops", purpose: "Circulation" },
-    { name: "Cypress", amount: "6 drops", purpose: "Lymphatic support" }
-  ],
-  metabolism: [
-    { name: "Grapefruit", amount: "8 drops", purpose: "Supports healthy metabolism" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Energizing, reduces cravings" },
-    { name: "Ginger", amount: "6 drops", purpose: "Thermogenic, aids digestion" }
-  ],
-  weight: [
-    { name: "Grapefruit", amount: "8 drops", purpose: "Metabolism support" },
-    { name: "Peppermint", amount: "6 drops", purpose: "Craving reduction" },
-    { name: "Lemon", amount: "6 drops", purpose: "Detox support" }
-  ],
-  thyroid: [
-    { name: "Frankincense", amount: "8 drops", purpose: "Glandular support" },
-    { name: "Myrrh", amount: "8 drops", purpose: "Thyroid support" },
-    { name: "Lavender", amount: "6 drops", purpose: "Stress reduction" }
-  ],
-  hypothyroid: [
-    { name: "Myrrh", amount: "10 drops", purpose: "Thyroid stimulation" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Glandular support" },
-    { name: "Ginger", amount: "6 drops", purpose: "Warming metabolism" }
-  ],
-  hyperthyroid: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calming" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Balancing" },
-    { name: "Melissa", amount: "6 drops", purpose: "Thyroid modulation" }
-  ],
-  adrenal: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms stress response" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Adrenal support" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  adrenal_fatigue: [
-    { name: "Lavender", amount: "10 drops", purpose: "Restores calm" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Adrenal support" },
-    { name: "Basil", amount: "6 drops", purpose: "Energy support" }
-  ],
-  cushings: [
-    { name: "Lavender", amount: "10 drops", purpose: "Stress reduction" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Hormone support" },
-    { name: "Geranium", amount: "6 drops", purpose: "Balance" }
-  ],
-  addisons: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Adrenal support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Stress reduction" },
-    { name: "Ginger", amount: "6 drops", purpose: "Warming support" }
-  ],
-  lupus: [
-    { name: "Lavender", amount: "10 drops", purpose: "Anti-inflammatory" },
-    { name: "Frankincense", amount: "10 drops", purpose: "Modulates inflammation" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Tissue trauma repair" }
-  ],
-  autoimmune: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Immune modulation" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Helichrysum", amount: "6 drops", purpose: "Tissue support" }
-  ],
-  cfs: [
-    { name: "Lavender", amount: "10 drops", purpose: "Rest support" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Energy support" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Cellular support" }
-  ],
-  longcovid: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Lung support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Nervous system calm" },
-    { name: "Eucalyptus", amount: "6 drops", purpose: "Respiratory support" }
-  ],
-  opioid: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms withdrawal anxiety" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Supports emotional healing" },
-    { name: "Bergamot FCF", amount: "6 drops", purpose: "Uplifts mood, reduces cravings" }
-  ],
-  addiction: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms cravings" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Emotional healing" },
-    { name: "Bergamot FCF", amount: "6 drops", purpose: "Mood support" }
-  ],
-  withdrawal: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms withdrawal" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Emotional support" },
-    { name: "Roman Chamomile", amount: "6 drops", purpose: "Soothing" }
-  ],
-  cravings: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Reduces cravings" },
-    { name: "Grapefruit", amount: "8 drops", purpose: "Appetite control" },
-    { name: "Lavender", amount: "6 drops", purpose: "Emotional balance" }
-  ],
-  detox: [
-    { name: "Lemon", amount: "10 drops", purpose: "Liver support" },
-    { name: "Grapefruit", amount: "8 drops", purpose: "Lymphatic" },
-    { name: "Cypress", amount: "6 drops", purpose: "Detoxification" }
-  ],
-  candida: [
-    { name: "Tea Tree", amount: "10 drops", purpose: "Antifungal" },
-    { name: "Oregano", amount: "8 drops", purpose: "Antimicrobial" },
-    { name: "Lavender", amount: "6 drops", purpose: "Soothing" }
-  ],
-  parasites: [
-    { name: "Tea Tree", amount: "10 drops", purpose: "Antiparasitic" },
-    { name: "Oregano", amount: "8 drops", purpose: "Antimicrobial" },
-    { name: "Ginger", amount: "6 drops", purpose: "Digestive support" }
-  ],
-  lyme: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Immune support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Tea Tree", amount: "6 drops", purpose: "Antimicrobial" }
-  ],
-  epstein: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Immune support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Lemon", amount: "6 drops", purpose: "Antiviral" }
-  ],
-  shingles: [
-    { name: "Lavender", amount: "10 drops", purpose: "Pain relief" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Cooling" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Healing" }
-  ],
-  dementia: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Memory support" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Cognitive support" },
-    { name: "Lemon", amount: "6 drops", purpose: "Mental clarity" }
-  ],
-  alzheimer: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Brain support" },
-    { name: "Rosemary", amount: "8 drops", purpose: "Memory" },
-    { name: "Lavender", amount: "6 drops", purpose: "Calming" }
-  ],
-  parkinson: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Nervous system" },
-    { name: "Lavender", amount: "8 drops", purpose: "Muscle relaxation" },
-    { name: "Vetiver", amount: "6 drops", purpose: "Grounding" }
-  ],
-  ms: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Nerve support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Helichrysum", amount: "6 drops", purpose: "Nerve repair" }
-  ],
-  als: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Nervous system" },
-    { name: "Lavender", amount: "8 drops", purpose: "Comfort" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  seizure: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms nervous system" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Neurological support" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Relaxation" }
-  ],
-  epilepsy: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calming" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Neurological" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  tremor: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms tremors" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Nervous system" },
-    { name: "Vetiver", amount: "6 drops", purpose: "Grounding" }
-  ],
-  stroke: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Brain support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calming" },
-    { name: "Rosemary", amount: "6 drops", purpose: "Circulation" }
-  ],
-  concussion: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Brain healing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calming" },
-    { name: "Helichrysum", amount: "6 drops", purpose: "Tissue repair" }
-  ],
-  adhd: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Focus support" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Mental clarity" },
-    { name: "Vetiver", amount: "6 drops", purpose: "Grounding" }
-  ],
-  add: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Focus" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Alertness" },
-    { name: "Lemon", amount: "6 drops", purpose: "Clarity" }
-  ],
-  focus: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Mental clarity" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Alertness" },
-    { name: "Lemon", amount: "6 drops", purpose: "Focus support" }
-  ],
-  memory: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Memory enhancement" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Cognitive support" },
-    { name: "Lemon", amount: "6 drops", purpose: "Mental clarity" }
-  ],
-  brain_fog: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Clears fog" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Mental clarity" },
-    { name: "Lemon", amount: "6 drops", purpose: "Alertness" }
-  ],
-  concentration: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Concentration" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Focus" },
-    { name: "Basil", amount: "6 drops", purpose: "Mental energy" }
-  ],
-  learning: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Memory" },
-    { name: "Lemon", amount: "8 drops", purpose: "Clarity" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Cognitive" }
-  ],
-  autism: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calming" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Grounding" },
-    { name: "Vetiver", amount: "6 drops", purpose: "Stabilizing" }
-  ],
-  aspergers: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calming" },
-    { name: "Cedarwood", amount: "8 drops", purpose: "Grounding" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Focus" }
-  ],
-  sensory: [
-    { name: "Lavender", amount: "10 drops", purpose: "Sensory calm" },
-    { name: "Cedarwood", amount: "8 drops", purpose: "Grounding" },
-    { name: "Vetiver", amount: "6 drops", purpose: "Stabilizing" }
-  ],
-  hypertension: [
-    { name: "Lavender", amount: "10 drops", purpose: "Lowers blood pressure" },
-    { name: "Ylang Ylang", amount: "8 drops", purpose: "Calms heart" },
-    { name: "Marjoram", amount: "6 drops", purpose: "Circulation" }
-  ],
-  hypotension: [
-    { name: "Rosemary", amount: "10 drops", purpose: "Raises blood pressure" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Circulation" },
-    { name: "Ginger", amount: "6 drops", purpose: "Warming" }
-  ],
-  palpitations: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms heart" },
-    { name: "Ylang Ylang", amount: "8 drops", purpose: "Regulates rhythm" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Deep breathing" }
-  ],
-  arrhythmia: [
-    { name: "Lavender", amount: "10 drops", purpose: "Heart rhythm" },
-    { name: "Ylang Ylang", amount: "8 drops", purpose: "Calming" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Stabilizing" }
-  ],
-  angina: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms chest" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Deep breathing" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Heart support" }
-  ],
-  chf: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calming" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Heart support" },
-    { name: "Hawthorn", amount: "6 drops", purpose: "Cardiovascular" }
-  ],
-  circulation: [
-    { name: "Ginger", amount: "10 drops", purpose: "Improves circulation" },
-    { name: "Black Pepper", amount: "8 drops", purpose: "Warming" },
-    { name: "Rosemary", amount: "6 drops", purpose: "Blood flow" }
-  ],
-  varicose_veins: [
-    { name: "Cypress", amount: "10 drops", purpose: "Vein support" },
-    { name: "Lavender", amount: "8 drops", purpose: "Anti-inflammatory" },
-    { name: "Lemon", amount: "6 drops", purpose: "Circulation" }
-  ],
-  'blood-type-a': [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms sensitive digestion" },
-    { name: "Chamomile", amount: "8 drops", purpose: "Soothes stress response" },
-    { name: "Ylang Ylang", amount: "6 drops", purpose: "Balances emotions" }
-  ],
-  'blood-type-b': [
-    { name: "Ginger", amount: "10 drops", purpose: "Digestive support" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Mental clarity" },
-    { name: "Lavender", amount: "6 drops", purpose: "Balance" }
-  ],
-  'blood-type-o': [
-    { name: "Ginger", amount: "10 drops", purpose: "Metabolism support" },
-    { name: "Peppermint", amount: "8 drops", purpose: "Energy" },
-    { name: "Orange", amount: "6 drops", purpose: "Uplifting" }
-  ],
-  'blood-type-ab': [
-    { name: "Lavender", amount: "10 drops", purpose: "Calming" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Balance" },
-    { name: "Bergamot FCF", amount: "6 drops", purpose: "Mood" }
-  ],
-  telomere: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Cellular support, anti-aging" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Tissue regeneration" },
-    { name: "Myrrh", amount: "6 drops", purpose: "Antioxidant protection" }
-  ],
-  unbroken: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms chronic pain" },
-    { name: "Frankincense", amount: "10 drops", purpose: "Supports resilience" },
-    { name: "Helichrysum", amount: "8 drops", purpose: "Tissue trauma repair" }
-  ],
-  queen: [
-    { name: "Rose", amount: "5 drops", purpose: "Promotes self-love, balances hormones" },
-    { name: "Ylang Ylang", amount: "7 drops", purpose: "Enhances confidence, reduces stress" },
-    { name: "Geranium", amount: "6 drops", purpose: "Supports emotional balance" }
-  ],
-  king: [
-    { name: "Cedarwood", amount: "8 drops", purpose: "Grounding, promotes strength" },
-    { name: "Frankincense", amount: "8 drops", purpose: "Supports leadership energy" },
-    { name: "Pine", amount: "6 drops", purpose: "Invigorating, clears mind" }
-  ],
-  meditation: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Deepens meditation" },
-    { name: "Sandalwood", amount: "8 drops", purpose: "Grounding, spiritual" },
-    { name: "Lavender", amount: "6 drops", purpose: "Calms mind" }
-  ],
-  grounding: [
-    { name: "Cedarwood", amount: "10 drops", purpose: "Deeply grounding" },
-    { name: "Vetiver", amount: "8 drops", purpose: "Stabilizing" },
-    { name: "Frankincense", amount: "6 drops", purpose: "Centering" }
-  ],
-  energy: [
-    { name: "Peppermint", amount: "10 drops", purpose: "Energizing" },
-    { name: "Rosemary", amount: "8 drops", purpose: "Mental energy" },
-    { name: "Grapefruit", amount: "6 drops", purpose: "Uplifting" }
-  ],
-  chakra: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Crown chakra" },
-    { name: "Lavender", amount: "8 drops", purpose: "Third eye" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Root chakra" }
-  ],
-  aura: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Aura cleansing" },
-    { name: "Lavender", amount: "8 drops", purpose: "Protection" },
-    { name: "Sage", amount: "6 drops", purpose: "Purification" }
-  ],
-  protection: [
-    { name: "Frankincense", amount: "10 drops", purpose: "Spiritual protection" },
-    { name: "Lavender", amount: "8 drops", purpose: "Calming" },
-    { name: "Cedarwood", amount: "6 drops", purpose: "Grounding" }
-  ],
-  xe: [
-    { name: "Lavender", amount: "10 drops", purpose: "Calms nerves, reduces inflammation" },
-    { name: "Roman Chamomile", amount: "8 drops", purpose: "Soothes tissue" },
-    { name: "Bergamot FCF", amount: "6 drops", purpose: "Uplifts mood" }
-  ]
+  // ... (Keep all your other 150+ conditions here exactly as you had them) ...
 };
 
 // ✅ Helper: Transform rule-based oils to frontend format
-function transformOilsToRecipe(oils) {
+function transformOilsToRecipe(oils: any[]) {
   return oils.map(oil => {
-    const drops = parseInt(oil.amount) || 10;
+    const drops = oil.drops !== undefined 
+      ? Number(oil.drops) 
+      : (parseInt(String(oil.amount || '').replace(/\D/g, ''), 10) || 10);
+      
     return {
-      oil: oil.name,
+      oil: oil.name || oil.oil || "Unknown Oil",
       drops: drops,
-      purpose: oil.purpose
+      purpose: oil.purpose || "Wellness support"
     };
   });
 }
 
 // ✅ Helper: Calculate price/xec based on oil count + complexity
-function calculatePricing(oils, isAi = false) {
+function calculatePricing(oils: any[], isAi = false) {
   const basePrice = 38;
   const complexityMultiplier = Math.min(1 + (oils.length - 3) * 0.15, 2.0);
   const price = Math.round(basePrice * complexityMultiplier);
-  const xec = Math.ceil(price / 0.37);
+  const xec = Math.ceil(price / 0.46); // Fallback for preview mode
   return { price, xec };
 }
 
 // ✅ Helper: Detect condition from extensive alias mapping
-function detectCondition(input) {
+function detectCondition(input: string | null | undefined) {
   if (!input || input.trim().length < 3) return null;
   const lowerInput = input.toLowerCase();
   
-  // Simple keyword check for demonstration. 
-  // In production, ensure you map keywords to the keys in ESSENTIAL_OILS above.
   if (lowerInput.includes('stress')) return 'stress';
-  if (lowerInput.includes('sleep')) return 'insomnia';
+  if (lowerInput.includes('sleep') || lowerInput.includes('insomnia')) return 'insomnia';
   if (lowerInput.includes('headache')) return 'headache';
   if (lowerInput.includes('muscle')) return 'musclepain';
   if (lowerInput.includes('joint')) return 'joint';
@@ -1126,9 +235,8 @@ function detectCondition(input) {
   return null;
 }
 
-// Blend name generator
-function getBlendName(condition, userInput = null) {
-  const names = {
+function getBlendName(condition: string, userInput: string | null = null) {
+  const names: Record<string, string> = {
     stress: "Calm Mind Elixir",
     insomnia: "Deep Sleep Serum",
     headache: "Serene Relief Therapy",
@@ -1143,9 +251,8 @@ function getBlendName(condition, userInput = null) {
     : (names[condition] || names.default);
 }
 
-// Benefits by condition
-function getBenefits(condition, userInput = null) {
-  const benefits = {
+function getBenefits(condition: string, userInput: string | null = null) {
+  const benefits: Record<string, string> = {
     stress: "Reduces anxiety, calms the nervous system, and promotes emotional resilience.",
     insomnia: "Encourages deep, restorative sleep and eases nighttime restlessness.",
     headache: "Relieves tension headaches and sinus pressure with cooling and anti-inflammatory action.",
@@ -1159,13 +266,11 @@ function getBenefits(condition, userInput = null) {
     : (benefits[condition] || "Personalized support for your unique wellness journey.");
 }
 
-// Instructions by condition
-function getInstructions(condition) {
+function getInstructions(condition: string) {
   return "Apply to clean skin with gentle massage. For best results, use after a warm shower when pores are open. Store in a cool, dark place and use within 6 months.";
 }
 
-// Notes (compliant)
-function getNotes(condition) {
+function getNotes(condition: string) {
   let note = "Perform a patch test before first use. This blend is intended as a complementary aromatherapy support and should not replace prescribed medical treatments.";
   if (['headache', 'sciatica', 'migraine', 'nervepain', 'concussion', 'stroke'].includes(condition)) {
     note += " Avoid contact with eyes. If eye contact occurs, flush with a carrier oil, not water.";
@@ -1177,7 +282,7 @@ function getNotes(condition) {
 }
 
 // ✅ Poe AI: Generate truly custom blend (fallback)
-async function generateAiBlend(userInput) {
+async function generateAiBlend(userInput: string) {
   if (!poeClient) {
     throw new Error('Poe API not configured. Please set POE_API_KEY environment variable.');
   }
@@ -1186,15 +291,21 @@ async function generateAiBlend(userInput) {
     model: 'emocreations.skin_ai',
     messages: [{
       role: 'user',
-      content: `Create a personalized essential oil blend recipe for: "${userInput}". Return ONLY a JSON object with this exact structure (no markdown, no extra text): { "name": "Creative blend name", "description": "2-3 sentence description of benefits", "recipe": [ {"oil": "Oil name", "drops": number, "purpose": "Why this oil"}, {"oil": "Oil name", "drops": number, "purpose": "Why this oil"} ], "instructions": "How to mix and apply", "price": 58, "xec": 103, "slug": "ai-generated-${Date.now()}" }`
+      content: `Create a personalized essential oil blend recipe for: "${userInput}". Return ONLY a JSON object with this exact structure (no markdown, no extra text): { "name": "Creative blend name", "description": "2-3 sentence description of benefits", "recipe": [ {"oil": "Oil name", "drops": number, "purpose": "Why this oil"} ], "instructions": "How to mix and apply", "price": 58, "xec": 103, "slug": "ai-generated-${Date.now()}" }`
     }],
     temperature: 0.7,
     max_tokens: 500,
   });
   
-  const responseText = completion.choices[0].message.content.trim();
+  const responseText = completion.choices?.[0]?.message?.content?.trim() || '{}';
   const cleanJson = responseText.replace(/```json\s*|\s*```/g, '').trim();
-  const blendData = JSON.parse(cleanJson);
+  
+  let blendData;
+  try {
+    blendData = JSON.parse(cleanJson);
+  } catch (e) {
+    throw new Error('Failed to parse AI response as JSON');
+  }
   
   if (!blendData.name || !blendData.recipe || !Array.isArray(blendData.recipe)) {
     throw new Error('AI response missing required fields');
@@ -1203,23 +314,22 @@ async function generateAiBlend(userInput) {
   return blendData;
 }
 
-export async function POST(request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      condition,
-      scentPreference,
-      skinType,
-      userInput,
-      useAI = false
-    } = body;
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return NextResponse.json({ error: 'Invalid JSON payload.' }, { status: 400 });
+    }
+
+    const { condition, scentPreference, skinType, userInput, useAI = false } = body;
 
     // ✅ RATE LIMIT CHECK
     const isAiRequest = useAI || (userInput && userInput.length > 30);
     
     if (isAiRequest) {
       const limiter = getRatelimit();
-      
       if (limiter) {
         const ip = request.headers.get('x-forwarded-for')?.split(',')[0] 
                  || request.headers.get('x-real-ip') 
@@ -1229,7 +339,7 @@ export async function POST(request) {
         
         if (!success) {
           if (supabase) {
-            const { error: rateLimitError } = await supabase.from('rate_limit_events').insert({
+            await supabase.from('rate_limit_events').insert({
               ip: ip.slice(0, 45),
               endpoint: '/api/generate-blend',
               rate_limit: limit,
@@ -1237,11 +347,7 @@ export async function POST(request) {
               reset_at: new Date(reset).toISOString(),
               user_agent: request.headers.get('user-agent')?.slice(0, 200),
               created_at: new Date().toISOString()
-            });
-            
-            if (rateLimitError) {
-              console.warn('Rate limit logging failed:', rateLimitError);
-            }
+            }).catch(err => console.warn('Rate limit logging failed:', err));
           }
           
           return NextResponse.json(
@@ -1264,18 +370,18 @@ export async function POST(request) {
       }
     }
 
-    let blendData;
+    let blendData: any;
     let generationMethod = 'rule-based';
-    let blendId;
+    let blendId: string;
 
     // ✅ Option 1: Poe AI generation
     if (isAiRequest) {
       try {
         generationMethod = 'poe-ai';
-        blendData = await generateAiBlend(userInput || condition);
+        blendData = await generateAiBlend(userInput || condition || 'general wellness');
         blendId = blendData.slug || `ai-${Date.now()}`;
-      } catch (aiError) {
-        console.warn('AI generation failed, falling back to rule-based:', aiError);
+      } catch (aiError: any) {
+        console.warn('AI generation failed, falling back to rule-based:', aiError.message);
         generationMethod = 'rule-based-fallback';
       }
     }
@@ -1285,21 +391,18 @@ export async function POST(request) {
       const detectedCondition = detectCondition(userInput || condition);
       const selectedCondition = detectedCondition || condition || 'default';
       
-      // ✅ FIXED: Now uses ESSENTIAL_OILS.default which exists
       const oils = ESSENTIAL_OILS[selectedCondition] || ESSENTIAL_OILS.default;
-      
-      console.log('🔍 User input:', userInput);
-      console.log('🔍 Condition received:', condition);
-      console.log('🔍 Detected condition:', detectedCondition);
-      console.log('🔍 Selected condition:', selectedCondition);
-      console.log('🔍 Oils found:', oils ? 'YES' : 'NO');
       
       let adjustedOils = oils;
       if (scentPreference === 'citrus') {
-        adjustedOils = oils.map(oil => 
-          oil.name.includes('Bergamot') || oil.name.includes('Lemon') ? oil : 
-          { ...oil, amount: (parseInt(oil.amount) * 0.8).toFixed(0) + ' drops' }
-        );
+        adjustedOils = oils.map((oil: any) => {
+          if (oil.name.includes('Bergamot') || oil.name.includes('Lemon')) {
+            return oil;
+          }
+          const currentDrops = parseInt(String(oil.amount || '').replace(/\D/g, ''), 10) || 10;
+          const newDrops = Math.max(1, Math.round(currentDrops * 0.8));
+          return { ...oil, amount: `${newDrops} drops` };
+        });
       }
 
       const { price, xec } = calculatePricing(adjustedOils);
@@ -1319,12 +422,11 @@ export async function POST(request) {
       blendId = blendData.slug;
     }
 
-    // ✅ Authorization check BEFORE returning full blend
+    // ✅ Authorization check
     const authResult = await verifyUserAuthorization(request, blendData);
 
     // ✅ Case 1: Not authorized and NOT preview mode → Return 402 Payment Required
     if (!authResult.authorized && !authResult.previewMode) {
-      console.log('❌ Unauthorized access attempt');
       return NextResponse.json(
         { 
           error: 'Payment required',
@@ -1355,7 +457,6 @@ export async function POST(request) {
 
     // ✅ Case 2: Preview mode requested → Return limited data
     if (authResult.previewMode) {
-      console.log('✅ Preview mode - returning limited data');
       return NextResponse.json({
         success: true,
         preview: true,
@@ -1375,11 +476,8 @@ export async function POST(request) {
     }
 
     // ✅ Case 3: Authorized with proper credentials → Return FULL recipe
-    console.log('✅ Full blend unlocked - returning complete recipe');
-
-    // ✅ Log to Supabase
     if (supabase) {
-      const { error: logError } = await supabase.from('access_logs').insert({
+      await supabase.from('access_logs').insert({
         action: 'blend_generated',
         method: generationMethod,
         payload: {
@@ -1395,14 +493,10 @@ export async function POST(request) {
           authMethod: authResult.method || 'unknown'
         },
         created_at: new Date().toISOString()
-      });
-      
-      if (logError) {
-        console.warn('Supabase logging failed:', logError);
-      }
+      }).catch(err => console.warn('Supabase logging failed:', err));
     }
 
-    const headers = {};
+    const headers: Record<string, string> = {};
     const limiter = getRatelimit();
     if (limiter && isAiRequest) {
       const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
@@ -1420,7 +514,7 @@ export async function POST(request) {
       authMethod: authResult.method || 'unknown'
     }, { status: 200, headers });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Generate blend error:', error);
     return NextResponse.json(
       { 
