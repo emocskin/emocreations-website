@@ -48,7 +48,7 @@ const XEC_CONFIG = {
   requiredUsdThreshold: 25,
 };
 
-// ✅ BASE_OILS definition
+// ✅ BASE_OILS definition (THIS WAS MISSING AND CAUSING THE CRASH)
 const BASE_OILS: Record<string, string> = {
   normal: "Jojoba Oil",
   dry: "Sweet Almond Oil",
@@ -69,14 +69,12 @@ async function verifyUserAuthorization(request: NextRequest, blendData: any) {
     try {
       client = new Client('wss://s1.ripple.com:51233');
       
-      // PRO FIX: Add a timeout to the connection itself to prevent serverless hangs
       const connectPromise = client.connect();
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error('XRPL connection timeout')), 5000)
       );
       await Promise.race([connectPromise, timeoutPromise]);
       
-      // 1. Get User XEC Balance
       const response = await client.request({
         command: 'account_lines',
         account: xrplAddress,
@@ -92,8 +90,7 @@ async function verifyUserAuthorization(request: NextRequest, blendData: any) {
         xecBalance = Math.abs(parseFloat(trustline.balance));
       }
       
-      // 2. CRITICAL FIX: Get Custom XEC Price via XRPL AMM (NOT CoinGecko 'ecash')
-      let xecPriceUsd = 0.46; // Safe fallback based on your initial pool data
+      let xecPriceUsd = 0.46; // Safe fallback
       
       try {
         const ammResponse = await client.request({
@@ -106,9 +103,8 @@ async function verifyUserAuthorization(request: NextRequest, blendData: any) {
         const pool = ammResponse.result.amm;
         if (pool && pool.amount && pool.amount2) {
           const parseAmount = (amt: any) => {
-            if (typeof amt === 'string') return Number(amt) / 1_000_000; // XRP drops
-            // PRO FIX: Added `amt !== null` to prevent TypeError, as `typeof null === 'object'` in JS
-            if (typeof amt === 'object' && amt !== null && amt.value) return Number(amt.value); // Token
+            if (typeof amt === 'string') return Number(amt) / 1_000_000;
+            if (typeof amt === 'object' && amt !== null && amt.value) return Number(amt.value);
             return 0;
           };
 
@@ -122,7 +118,6 @@ async function verifyUserAuthorization(request: NextRequest, blendData: any) {
           if (xecBalancePool > 0 && xrpBalance > 0) {
             const xecPriceInXRP = xrpBalance / xecBalancePool;
 
-            // Fetch live XRP/USD from CoinGecko
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000);
             try {
@@ -144,7 +139,6 @@ async function verifyUserAuthorization(request: NextRequest, blendData: any) {
         console.warn('⚠️ AMM price fetch failed, using fallback price:', ammError);
       }
       
-      // PRO FIX: Use `||` instead of `??` to correctly catch `NaN` if blendData.price is undefined
       const priceUsd = Number(blendData.price) || 38;
       const requiredXec = Math.ceil(priceUsd / xecPriceUsd);
       const usdValue = xecBalance * xecPriceUsd;
@@ -180,7 +174,7 @@ async function verifyUserAuthorization(request: NextRequest, blendData: any) {
   return { authorized: false, previewMode: false };
 }
 
-// ✅✅✅ ULTIMATE ESSENTIAL OIL LIBRARY (Keep your full object here)
+// ✅✅✅ ULTIMATE ESSENTIAL OIL LIBRARY
 const ESSENTIAL_OILS: Record<string, any[]> = {
   default: [
     { name: "Lavender", amount: "10 drops", purpose: "General wellness" },
@@ -325,7 +319,6 @@ export async function POST(request: NextRequest) {
 
     const { condition, scentPreference, skinType, userInput, useAI = false } = body;
 
-    // ✅ RATE LIMIT CHECK
     const isAiRequest = useAI || (userInput && userInput.length > 30);
     
     if (isAiRequest) {
@@ -374,7 +367,6 @@ export async function POST(request: NextRequest) {
     let generationMethod = 'rule-based';
     let blendId: string;
 
-    // ✅ Option 1: Poe AI generation
     if (isAiRequest) {
       try {
         generationMethod = 'poe-ai';
@@ -386,7 +378,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ✅ Option 2: Rule-based generation (default or fallback)
     if (!blendData) {
       const detectedCondition = detectCondition(userInput || condition);
       const selectedCondition = detectedCondition || condition || 'default';
@@ -422,10 +413,8 @@ export async function POST(request: NextRequest) {
       blendId = blendData.slug;
     }
 
-    // ✅ Authorization check
     const authResult = await verifyUserAuthorization(request, blendData);
 
-    // ✅ Case 1: Not authorized and NOT preview mode → Return 402 Payment Required
     if (!authResult.authorized && !authResult.previewMode) {
       return NextResponse.json(
         { 
@@ -455,7 +444,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Case 2: Preview mode requested → Return limited data
     if (authResult.previewMode) {
       return NextResponse.json({
         success: true,
@@ -475,7 +463,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // ✅ Case 3: Authorized with proper credentials → Return FULL recipe
     if (supabase) {
       await supabase.from('access_logs').insert({
         action: 'blend_generated',
@@ -527,7 +514,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ✅ Health check endpoint
 export async function GET() {
   const limiter = getRatelimit();
   return NextResponse.json({
